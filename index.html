@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Knowledge Site | 勉強会資料ライブラリ</title>
+<meta name="description" content="勉強会で使う資料をまとめたライブラリ。好きな資料を選んで、その場で読めます。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
+<style>
+:root{
+  --bg:#f4f6f3;
+  --bg-2:#ffffff;
+  --card:#ffffff;
+  --line:#dde4de;
+  --ink:#17201b;
+  --muted:#5d6b63;
+  --brand:#14744a;
+  --brand-2:#1f9d63;
+  --brand-l:#e3f5ec;
+  --gold:#d99a00;
+  --danger:#d63c3c;
+  --shadow:0 10px 28px rgba(20,40,30,.12);
+  --font:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1512;--bg-2:#17201b;--card:#1a241f;--line:#2c3a33;--ink:#eef5f0;--muted:#9fb1a7;
+    --brand:#4fd197;--brand-2:#2fb47a;--brand-l:#1d3329;--gold:#ffc940;--danger:#ff6b6b;
+    --shadow:0 10px 28px rgba(0,0,0,.4);color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1512;--bg-2:#17201b;--card:#1a241f;--line:#2c3a33;--ink:#eef5f0;--muted:#9fb1a7;
+  --brand:#4fd197;--brand-2:#2fb47a;--brand-l:#1d3329;--gold:#ffc940;--danger:#ff6b6b;
+  --shadow:0 10px 28px rgba(0,0,0,.4);color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-weight:500;line-height:1.7;-webkit-tap-highlight-color:transparent}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--brand)}
+.wrap{max-width:1100px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left)) 64px max(16px,env(safe-area-inset-right))}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,#0d3a27 0%,#14744a 55%,#1f9d63 100%);color:#fff;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(500px 240px at 90% 0%,rgba(124,240,182,.35),transparent 70%),
+  repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 1px,transparent 1px 48px),
+  repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 1px,transparent 1px 48px);pointer-events:none}
+.hero .wrap{position:relative;z-index:1;padding-top:40px;padding-bottom:32px}
+.hero-top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.brand .eyebrow{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:rgba(255,255,255,.16);padding:2px 12px;border-radius:999px;margin-bottom:10px}
+.brand h1{font-weight:900;font-size:clamp(28px,6vw,46px);line-height:1.15;margin:0;letter-spacing:.01em}
+.brand h1 span{color:#9ff5c9}
+.brand p{margin:8px 0 0;opacity:.9;font-size:15px}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:8px 16px;min-width:96px}
+.stat b{display:block;font-size:22px;font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums}
+.stat small{font-size:12px;opacity:.85}
+
+/* Toolbar */
+.toolbar-wrap{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.toolbar-wrap .wrap{padding-top:12px;padding-bottom:12px;display:flex;flex-direction:column;gap:10px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.search{flex:1 1 220px;border:1.5px solid var(--line);background:var(--bg-2);border-radius:999px;padding:8px 16px;font-size:14px;outline:none;min-width:0}
+.search:focus,.sort:focus{border-color:var(--brand)}
+.sort{border:1.5px solid var(--line);background:var(--bg-2);border-radius:999px;padding:8px 14px;font-size:14px;font-weight:700;outline:none;cursor:pointer}
+.btn{border:1.5px solid var(--line);background:var(--bg-2);border-radius:999px;padding:8px 16px;font-weight:700;font-size:14px;transition:transform .1s,background .15s,border-color .15s;white-space:nowrap;text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.btn:hover{border-color:var(--brand)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--brand-2);border-color:var(--brand-2);color:#fff}
+.btn.on{background:var(--gold);border-color:var(--gold);color:#241a00}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{border:1.5px solid var(--line);background:var(--bg-2);border-radius:999px;padding:3px 14px;font-size:13px;font-weight:700;white-space:nowrap;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--bg-2)}
+.chip small{opacity:.7;margin-left:4px}
+
+/* Manage banner */
+.manage-bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;background:color-mix(in srgb,var(--gold) 10%,transparent);border:2px dashed var(--gold);border-radius:16px;padding:12px 16px;margin-top:20px;font-size:14px}
+.manage-bar p{margin:0;color:var(--muted)}
+
+/* Section heads */
+.sec-head{display:flex;align-items:baseline;gap:12px;margin:28px 0 12px}
+.sec-head h2{font-size:20px;font-weight:900;margin:0}
+.sec-head span{color:var(--muted);font-size:13px}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.card{position:relative;background:var(--card);border:1.5px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,border-color .15s,box-shadow .15s}
+.card:hover{transform:translateY(-4px);border-color:var(--brand);box-shadow:var(--shadow)}
+.thumb{all:unset;cursor:pointer;display:grid;place-items:center;aspect-ratio:16/9;position:relative;overflow:hidden}
+.thumb:focus-visible{outline:3px solid var(--gold);outline-offset:-3px}
+.thumb .emoji{font-size:68px;filter:drop-shadow(0 6px 0 rgba(0,0,0,.2));transition:transform .2s}
+.card:hover .thumb .emoji{transform:scale(1.1) rotate(-5deg)}
+.thumb .badges{position:absolute;left:10px;top:10px;display:flex;gap:6px}
+.pill{background:rgba(0,0,0,.45);color:#fff;backdrop-filter:blur(4px);border-radius:999px;padding:1px 10px;font-weight:700;font-size:11px}
+.pill.new{background:#ff4f7b}
+.thumb .open-badge{position:absolute;right:10px;bottom:10px}
+.body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.body h3{font-weight:900;font-size:17px;line-height:1.4;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--muted);font-weight:700}
+.body p{margin:0;color:var(--muted);font-size:13px;flex:1;line-height:1.65}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tags span{font-size:11px;padding:0 8px;border-radius:6px;background:var(--brand-l);color:var(--brand);font-weight:700}
+.tag-added{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--line);color:var(--muted);margin-left:6px;vertical-align:middle}
+.card .actions{display:flex;gap:8px;margin-top:4px}
+.card .actions .btn.primary{flex:1}
+.del{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;border:none;background:var(--danger);color:#fff;font-size:16px;font-weight:900;display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:2}
+.card.add{border-style:dashed;background:transparent;align-items:center;justify-content:center;min-height:280px;gap:8px;color:var(--muted);font-weight:700}
+.card.add .plus{font-size:48px;line-height:1;color:var(--brand)}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:48px 0}
+.plays{font-size:12px;color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums}
+.plays[data-rank]::before{content:attr(data-rank);margin-right:4px}
+
+/* Ranking */
+.ranking{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:16px;margin-top:20px}
+.rank-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:10px}
+.rank-head h2{font-weight:900;font-size:18px;margin:0}
+.rank-note{color:var(--muted);font-size:12px;flex:1;min-width:120px}
+.rank-head .btn{padding:4px 12px;font-size:12px}
+.rank-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.rank-item{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:32px 38px minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;padding:6px 12px 6px 6px;border-radius:12px;background:var(--bg);border:1.5px solid transparent;transition:border-color .15s}
+.rank-item:hover{border-color:var(--brand)}
+.rank-item:focus-visible{outline:3px solid var(--gold)}
+.rank-no{font-weight:900;font-size:16px;text-align:center;color:var(--muted)}
+.rank-item.top .rank-no{font-size:22px}
+.rank-emoji{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:20px}
+.rank-title{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank-count{font-weight:900;font-size:15px;color:var(--gold);white-space:nowrap;font-variant-numeric:tabular-nums}
+.rank-count small{font-size:11px;color:var(--muted);margin-left:2px;font-weight:700}
+.rank-msg{color:var(--muted);font-size:13px;margin:0;padding:6px 4px}
+
+/* How-to */
+.howto{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:8px}
+.howto div{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;font-size:13px;color:var(--muted)}
+.howto b{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
+
+/* Viewer */
+#viewer{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column}
+#viewer iframe{flex:1;width:100%;border:0;display:block;background:#fff;min-height:0}
+.viewer-bar{flex:none;display:flex;align-items:center;gap:6px;padding:4px max(8px,env(safe-area-inset-right)) 4px max(8px,env(safe-area-inset-left));padding-top:max(4px,env(safe-area-inset-top));background:#0d3a27;color:#fff;border-bottom:1px solid #0a2c1e}
+.viewer-bar .title{flex:1;min-width:0;font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.viewer-bar .btn{padding:2px 12px;font-size:12px;line-height:1.6;border-width:1px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff}
+.viewer-bar .btn:hover{background:rgba(255,255,255,.2)}
+
+/* Dialog */
+dialog{border:1.5px solid var(--line);border-radius:18px;background:var(--bg-2);color:var(--ink);padding:0;width:min(540px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
+dialog::backdrop{background:rgba(5,15,10,.6);backdrop-filter:blur(3px)}
+dialog form{padding:24px;display:flex;flex-direction:column;gap:14px}
+dialog h3{font-weight:900;font-size:20px;margin:0}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--muted)}
+input[type=text],input[type=url],input[type=password],input[type=date],textarea,dialog select{background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:500;outline:none;width:100%}
+input:focus,textarea:focus,dialog select:focus{border-color:var(--brand)}
+textarea{resize:vertical;min-height:60px}
+.row{display:flex;gap:12px}
+.row>label{flex:1;min-width:0}
+input[type=color]{width:100%;height:42px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);padding:2px}
+.seg{display:flex;border:1.5px solid var(--line);border-radius:999px;overflow:hidden}
+.seg label{flex:1;flex-direction:row;justify-content:center;padding:6px;cursor:pointer;color:var(--ink)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--brand);color:var(--bg-2)}
+.hint{font-size:12px;color:var(--muted);margin:0;font-weight:500}
+#pwMsg{color:var(--danger);min-height:1.2em;font-weight:700}
+.dlg-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+.preview{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted)}
+.preview .mini{width:72px;aspect-ratio:16/9;border-radius:10px;display:grid;place-items:center;font-size:28px}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-weight:700;padding:10px 20px;border-radius:999px;z-index:100;box-shadow:var(--shadow);font-size:14px}
+footer{color:var(--muted);font-size:12px;text-align:center;margin-top:48px}
+@media (max-width:520px){.row{flex-direction:column}.stats{width:100%}.stat{flex:1;min-width:0}}
+</style>
+</head>
+<body>
+
+<div id="home">
+  <header class="hero">
+    <div class="wrap">
+      <div class="hero-top">
+        <div class="brand">
+          <span class="eyebrow">STUDY SESSION LIBRARY</span>
+          <h1>KNOWLEDGE <span>SITE</span></h1>
+          <p>勉強会の資料をまとめたライブラリ。気になる資料を選んで、そのまま読めます。</p>
+        </div>
+        <div class="stats">
+          <div class="stat"><b id="statCount">0</b><small>資料</small></div>
+          <div class="stat"><b id="statCats">0</b><small>カテゴリ</small></div>
+          <div class="stat"><b id="statViews">–</b><small>総閲覧数</small></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="toolbar-wrap">
+    <div class="wrap">
+      <div class="toolbar">
+        <input class="search" id="search" type="search" placeholder="資料を検索（タイトル・説明・タグ）…" aria-label="資料を検索">
+        <select class="sort" id="sort" aria-label="並び順">
+          <option value="new">新着順</option>
+          <option value="popular">人気順</option>
+          <option value="title">タイトル順</option>
+        </select>
+        <select class="sort" id="level" aria-label="レベル">
+          <option value="">全レベル</option>
+          <option value="初級">初級</option>
+          <option value="中級">中級</option>
+          <option value="上級">上級</option>
+        </select>
+        <button class="btn" id="manageBtn" aria-pressed="false">⚙ 管理</button>
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="カテゴリで絞り込み"></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="manage-bar" id="manageBar" hidden>
+      <p>管理モード：右上の ✕ で削除、「＋」で追加できます。変更はこのブラウザに保存されます。</p>
+      <div class="toolbar">
+        <button class="btn" id="restoreBtn">削除した資料を元に戻す</button>
+        <button class="btn primary" id="addBtn">＋ 資料を追加</button>
+      </div>
+    </div>
+
+    <section class="ranking" id="ranking" aria-labelledby="rankTitle">
+      <div class="rank-head">
+        <h2 id="rankTitle">🏆 よく読まれている資料</h2>
+        <span class="rank-note">みんなが開いた回数</span>
+        <button class="btn" id="rankToggle" aria-expanded="false">すべて見る</button>
+      </div>
+      <ol class="rank-list" id="rankList"></ol>
+    </section>
+
+    <div class="sec-head"><h2>📚 資料一覧</h2><span id="resultNote"></span></div>
+    <main class="grid" id="grid" aria-live="polite"></main>
+
+    <div class="sec-head"><h2>💡 使い方</h2></div>
+    <div class="howto">
+      <div><b>① 資料を選ぶ</b>カテゴリやレベル、キーワードで絞り込めます。</div>
+      <div><b>② その場で読む</b>「開く」でサイト内に表示。「↗」で別タブ、「⛶」で全画面。</div>
+      <div><b>③ URLで共有</b>開いている資料のURLをそのまま参加者に送れます。</div>
+    </div>
+
+    <footer>Knowledge Site — 勉強会資料ライブラリ</footer>
+  </div>
+</div>
+
+<!-- Viewer -->
+<div id="viewer" hidden>
+  <div class="viewer-bar">
+    <button class="btn" id="backBtn">← 一覧</button>
+    <div class="title" id="viewerTitle"></div>
+    <button class="btn" id="shareBtn" title="URLをコピー">🔗</button>
+    <a class="btn" id="tabBtn" title="別タブで開く" target="_blank" rel="noopener">↗</a>
+    <button class="btn" id="fsBtn" title="全画面">⛶</button>
+  </div>
+  <iframe id="frame" title="資料" allow="fullscreen; clipboard-write; web-share" allowfullscreen></iframe>
+</div>
+
+<dialog id="pwDlg">
+  <form method="dialog" id="pwForm">
+    <h3>🔒 管理者パスワード</h3>
+    <label>パスワード
+      <input type="password" name="pw" id="pwInput" autocomplete="current-password" required>
+    </label>
+    <p class="hint" id="pwMsg" role="alert"></p>
+    <div class="dlg-actions">
+      <button class="btn" type="button" data-close>キャンセル</button>
+      <button class="btn primary" value="ok">開く</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="addDlg">
+  <form method="dialog" id="addForm">
+    <h3>資料を追加</h3>
+    <label>タイトル *
+      <input type="text" name="title" required maxlength="80" placeholder="例：はじめてのGit入門">
+    </label>
+    <label>説明
+      <textarea name="description" maxlength="200" placeholder="どんな内容？"></textarea>
+    </label>
+    <div class="row">
+      <label>カテゴリ
+        <input type="text" name="category" maxlength="20" placeholder="例：AI活用" list="catList">
+      </label>
+      <label>レベル
+        <select name="level"><option>初級</option><option>中級</option><option>上級</option></select>
+      </label>
+      <label>所要時間
+        <input type="text" name="duration" maxlength="12" placeholder="例：30分">
+      </label>
+    </div>
+    <datalist id="catList"></datalist>
+    <label>タグ（カンマ区切り）
+      <input type="text" name="tags" maxlength="120" placeholder="例：Git, GitHub, 入門">
+    </label>
+    <div class="row">
+      <label>絵文字
+        <input type="text" name="emoji" maxlength="4" value="📘">
+      </label>
+      <label>背景色
+        <input type="color" name="color" value="#14744a">
+      </label>
+    </div>
+    <div class="preview"><div class="mini" id="pv">📘</div>カードのプレビュー</div>
+
+    <div class="seg" role="radiogroup" aria-label="資料の場所">
+      <label><input type="radio" name="src" value="file" checked>HTMLファイル</label>
+      <label><input type="radio" name="src" value="url">URL / パス</label>
+    </div>
+    <label id="fileField">HTMLファイル *
+      <input type="file" name="file" accept=".html,.htm,text/html">
+      <span class="hint">1ファイルで完結する資料（.html）をアップロードします。</span>
+    </label>
+    <label id="urlField" hidden>URL またはパス *
+      <input type="text" name="url" placeholder="materials/my-topic/index.html または https://…">
+      <span class="hint">materials/ フォルダに置いた資料や、外部サイトの資料を登録できます。</span>
+    </label>
+
+    <div class="dlg-actions">
+      <button class="btn" type="button" data-close>キャンセル</button>
+      <button class="btn primary" value="ok">追加する</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="materials.js?v=1"></script>
+<script>
+(() => {
+  "use strict";
+
+  /* ---------- storage ---------- */
+  const LS_CUSTOM = "ks.customMaterials";
+  const LS_HIDDEN = "ks.hiddenMaterials";
+  const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
+
+  // アップロードしたHTMLは容量が大きくなりうるので IndexedDB に保存
+  const idb = (() => {
+    let p;
+    const open = () => p ??= new Promise((res, rej) => {
+      const r = indexedDB.open("knowledge-site", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("files");
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    const tx = async (mode, fn) => {
+      const db = await open();
+      return new Promise((res, rej) => {
+        const t = db.transaction("files", mode);
+        const req = fn(t.objectStore("files"));
+        t.oncomplete = () => res(req && req.result);
+        t.onerror = () => rej(t.error);
+      });
+    };
+    return {
+      get: k => tx("readonly", s => s.get(k)),
+      put: (k, v) => tx("readwrite", s => s.put(v, k)),
+      del: k => tx("readwrite", s => s.delete(k)),
+    };
+  })();
+
+  /* ---------- state ---------- */
+  const builtin = (window.MATERIALS || []).map((m, i) => ({ ...m, builtin: true, _order: i }));
+  let custom = lsGet(LS_CUSTOM, []);
+  let hidden = new Set(lsGet(LS_HIDDEN, []));
+  let manage = false;
+  let query = "";
+  let category = "";
+  let level = "";
+  let sortMode = lsGet("ks.sort", "new");
+  let rankOpen = false;
+
+  const all = () => [...builtin.filter(m => !hidden.has(m.id)), ...custom];
+  const find = id => all().find(m => m.id === id);
+  const catOf = m => m.category || "その他";
+
+  /* ---------- DOM ---------- */
+  const $ = s => document.querySelector(s);
+  const grid = $("#grid"), home = $("#home"), viewer = $("#viewer"), frame = $("#frame");
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const safeColor = c => /^#[0-9a-f]{3,8}$/i.test(c || "") ? c : "#14744a";
+  const isNew = m => {
+    const t = Date.parse(m.date || "");
+    return !isNaN(t) && Date.now() - t < 30 * 864e5 && Date.now() - t > -864e5;
+  };
+  const fmtDate = d => { const t = Date.parse(d || ""); return isNaN(t) ? "" : new Date(t).toLocaleDateString("ja-JP"); };
+
+  function sorted(list) {
+    if (sortMode === "popular") return byPopularity(list);
+    if (sortMode === "title") return [...list].sort((a, b) => a.title.localeCompare(b.title, "ja"));
+    return [...list].sort((a, b) => (Date.parse(b.date || "") || 0) - (Date.parse(a.date || "") || 0) || (a._order ?? 1e9) - (b._order ?? 1e9));
+  }
+
+  function renderChips() {
+    const counts = new Map();
+    for (const m of all()) counts.set(catOf(m), (counts.get(catOf(m)) || 0) + 1);
+    if (category && !counts.has(category)) category = "";
+    const chips = [["", "すべて", all().length], ...[...counts].sort((a, b) => b[1] - a[1]).map(([c, n]) => [c, c, n])];
+    $("#chips").innerHTML = chips.map(([v, label, n]) =>
+      `<button class="chip" data-cat="${esc(v)}" aria-pressed="${category === v}">${esc(label)}<small>${n}</small></button>`).join("");
+    $("#catList").innerHTML = [...counts.keys()].map(c => `<option value="${esc(c)}">`).join("");
+    $("#statCount").textContent = all().length;
+    $("#statCats").textContent = counts.size;
+  }
+
+  function render() {
+    renderChips();
+    const q = query.trim().toLowerCase();
+    let list = all().filter(m =>
+      (!category || catOf(m) === category) &&
+      (!level || m.level === level) &&
+      (!q || [m.title, m.description, m.category, ...(m.tags || [])].join(" ").toLowerCase().includes(q)));
+    list = sorted(list);
+    let html = list.map(m => {
+      const c = safeColor(m.color), a = safeColor(m.accent || m.color);
+      return `
+      <article class="card" data-id="${esc(m.id)}">
+        ${manage ? `<button class="del" data-del="${esc(m.id)}" aria-label="${esc(m.title)} を削除">✕</button>` : ""}
+        <button class="thumb" data-view="${esc(m.id)}" aria-label="${esc(m.title)} を開く"
+          style="background:radial-gradient(circle at 30% 30%, ${a}66, transparent 60%), linear-gradient(135deg, ${c}, ${c}cc)">
+          <span class="badges">
+            ${isNew(m) ? `<span class="pill new">NEW</span>` : ""}
+            <span class="pill">${esc(catOf(m))}</span>
+          </span>
+          <span class="emoji">${esc(m.emoji || "📘")}</span>
+          <span class="pill open-badge">📖 READ</span>
+        </button>
+        <div class="body">
+          <h3>${esc(m.title)}${m.builtin ? "" : `<span class="tag-added">追加</span>`}</h3>
+          <div class="meta">
+            ${m.level ? `<span>🎯 ${esc(m.level)}</span>` : ""}
+            ${m.duration ? `<span>⏱ ${esc(m.duration)}</span>` : ""}
+            ${m.date ? `<span>📅 ${esc(fmtDate(m.date))}</span>` : ""}
+            ${viewsBadge(m)}
+          </div>
+          <p>${esc(m.description || "")}</p>
+          ${(m.tags || []).length ? `<div class="tags">${m.tags.map(t => `<span>#${esc(t)}</span>`).join("")}</div>` : ""}
+          <div class="actions">
+            <button class="btn primary" data-view="${esc(m.id)}">📖 開く</button>
+            <a class="btn" href="${esc(m.fileKey ? "#/view/" + m.id : m.path)}" ${m.fileKey ? "" : `target="_blank" rel="noopener"`} title="別タブで開く">↗</a>
+          </div>
+        </div>
+      </article>`;
+    }).join("");
+    if (manage) html += `<button class="card add" id="addCard"><span class="plus">＋</span>資料を追加</button>`;
+    if (!list.length && !manage) html = `<div class="empty">${q || category || level ? "条件に合う資料が見つかりませんでした。" : "資料がありません。「⚙ 管理」から追加できます。"}</div>`;
+    grid.innerHTML = html;
+    $("#resultNote").textContent = `${list.length} 件`;
+    $("#restoreBtn").hidden = hidden.size === 0;
+    renderRanking();
+  }
+
+  /* ---------- view counter & ranking ----------
+   * 全員分の閲覧数（資料を開いた回数）を無料のカウンターサービス Abacus に保存する。
+   * https://abacus.jasoncameron.dev … 登録不要。管理画面で追加した（このブラウザだけの）資料は集計しない。 */
+  const COUNTER_API = "https://abacus.jasoncameron.dev";
+  const COUNTER_NS = window.KS_COUNTER_NS || "cuichunxue-knowledge-site";
+  const LS_COUNTS = "ks.counts";
+  const CACHE_MS = 60 * 1000;
+  let counts = {};
+  let countsState = "loading"; // loading | ok | error
+  { const c = lsGet(LS_COUNTS, null); if (c && c.counts) { counts = c.counts; countsState = "ok"; } }
+  const counted = m => m.builtin;
+  const saveCounts = () => lsSet(LS_COUNTS, { t: Date.now(), counts });
+  const fmtN = n => Number(n || 0).toLocaleString("ja-JP");
+
+  async function counterReq(kind, id) {
+    const r = await fetch(`${COUNTER_API}/${kind}/${COUNTER_NS}/${encodeURIComponent(id)}`, { cache: "no-store" });
+    if (r.status === 404) return 0;
+    if (!r.ok) throw new Error("counter " + r.status);
+    return Number((await r.json()).value) || 0;
+  }
+  async function loadCounts(force) {
+    const c = lsGet(LS_COUNTS, null);
+    if (!force && c && Date.now() - c.t < CACHE_MS) { renderTotal(); return; }
+    const ids = builtin.map(m => m.id);
+    let failed = 0, i = 0;
+    await Promise.all(Array.from({ length: 4 }, async () => {
+      while (i < ids.length) {
+        const id = ids[i++];
+        try { counts[id] = Math.max(await counterReq("get", id), counts[id] || 0); } catch { failed++; }
+      }
+    }));
+    if (failed < ids.length || !ids.length) { countsState = "ok"; saveCounts(); }
+    else if (countsState !== "ok") countsState = "error";
+    if (viewer.hidden) render();
+    renderTotal();
+  }
+  function renderTotal() {
+    $("#statViews").textContent = countsState === "ok"
+      ? fmtN(all().filter(counted).reduce((s, m) => s + (counts[m.id] || 0), 0)) : "–";
+  }
+  function countView(m) {
+    if (!counted(m)) return;
+    let last = null;
+    try { last = JSON.parse(sessionStorage.getItem("ks.lastHit")); } catch {}
+    if (last && last.id === m.id && Date.now() - last.t < 5000) return;
+    try { sessionStorage.setItem("ks.lastHit", JSON.stringify({ id: m.id, t: Date.now() })); } catch {}
+    counts[m.id] = (counts[m.id] || 0) + 1;
+    counterReq("hit", m.id)
+      .then(v => { counts[m.id] = Math.max(v, counts[m.id] || 0); countsState = "ok"; saveCounts(); })
+      .catch(() => {});
+  }
+  function byPopularity(list) {
+    const order = new Map(all().map((m, i) => [m.id, i]));
+    return [...list].sort((a, b) =>
+      (counted(b) - counted(a)) || ((counts[b.id] || 0) - (counts[a.id] || 0)) || (order.get(a.id) - order.get(b.id)));
+  }
+  const MEDALS = ["🥇", "🥈", "🥉"];
+  function rankOf(id) {
+    const n = counts[id] || 0;
+    if (!n) return 0;
+    return 1 + all().filter(m => counted(m) && (counts[m.id] || 0) > n).length;
+  }
+  function viewsBadge(m) {
+    if (!counted(m) || countsState !== "ok") return "";
+    const r = rankOf(m.id);
+    const medal = r >= 1 && r <= 3 ? ` data-rank="${MEDALS[r - 1]}"` : "";
+    return `<span class="plays"${medal}>👀 ${fmtN(counts[m.id] || 0)} 回</span>`;
+  }
+  function renderRanking() {
+    const list = $("#rankList"), toggle = $("#rankToggle");
+    const items = byPopularity(all().filter(counted));
+    $("#ranking").hidden = items.length < 2; // 資料が1件だけのうちはランキングを出さない
+    if (countsState === "loading") { list.innerHTML = `<li class="rank-msg">集計を読み込み中…</li>`; toggle.hidden = true; return; }
+    if (countsState === "error") { list.innerHTML = `<li class="rank-msg">ランキングを読み込めませんでした。</li>`; toggle.hidden = true; return; }
+    const shown = rankOpen ? items : items.slice(0, 5);
+    list.innerHTML = shown.map(m => {
+      const n = counts[m.id] || 0, rank = rankOf(m.id);
+      const no = rank === 0 ? "–" : rank <= 3 ? MEDALS[rank - 1] : rank;
+      return `<li><button class="rank-item${rank >= 1 && rank <= 3 ? " top" : ""}" data-view="${esc(m.id)}" aria-label="${rank ? rank + "位 " : ""}${esc(m.title)} ${fmtN(n)}回">
+        <span class="rank-no">${no}</span>
+        <span class="rank-emoji" style="background:${safeColor(m.color)}">${esc(m.emoji || "📘")}</span>
+        <span class="rank-title">${esc(m.title)}</span>
+        <span class="rank-count">${fmtN(n)}<small>回</small></span>
+      </button></li>`;
+    }).join("");
+    toggle.hidden = items.length <= 5;
+    toggle.textContent = rankOpen ? "トップ5だけ表示" : `すべて見る（${items.length}）`;
+    toggle.setAttribute("aria-expanded", rankOpen);
+  }
+
+  /* ---------- events ---------- */
+  const go = id => location.hash = "#/view/" + encodeURIComponent(id);
+  $("#rankList").addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (b) go(b.dataset.view); });
+  $("#rankToggle").addEventListener("click", () => { rankOpen = !rankOpen; renderRanking(); });
+  grid.addEventListener("click", e => {
+    const v = e.target.closest("[data-view]"), del = e.target.closest("[data-del]");
+    if (del) return removeItem(del.dataset.del);
+    if (v) return go(v.dataset.view);
+    if (e.target.closest("#addCard")) openAdd();
+  });
+  $("#chips").addEventListener("click", e => { const c = e.target.closest("[data-cat]"); if (c) { category = c.dataset.cat; render(); } });
+  $("#search").addEventListener("input", e => { query = e.target.value; render(); });
+  const sortSel = $("#sort");
+  sortSel.value = ["new", "popular", "title"].includes(sortMode) ? sortMode : "new";
+  sortSel.addEventListener("change", () => { sortMode = sortSel.value; lsSet("ks.sort", sortMode); render(); });
+  $("#level").addEventListener("change", e => { level = e.target.value; render(); });
+
+  /* ---------- admin password ----------
+   * materials.js の ADMIN_PASSWORD_HASH と照合（SHA-256、"mini-game-arcade:" + パスワード）。
+   * Mini Game Arcade と同じパスワードで入れる。公開サイトなので簡易ロックである点に注意。 */
+  const PW_SALT = "mini-game-arcade:";
+  const pwDlg = $("#pwDlg"), pwForm = $("#pwForm"), pwInput = $("#pwInput"), pwMsg = $("#pwMsg");
+  let pwFails = 0, pwLockUntil = 0, pwResolve = null;
+  async function sha256Hex(text) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+  function askAdminPassword() {
+    if (!window.ADMIN_PASSWORD_HASH) return Promise.resolve(true);
+    if (!(window.crypto && crypto.subtle)) { alert("このブラウザではパスワードを確認できません（https で開いてください）。"); return Promise.resolve(false); }
+    pwForm.reset(); pwMsg.textContent = "";
+    pwDlg.showModal(); pwInput.focus();
+    return new Promise(res => { pwResolve = res; });
+  }
+  pwForm.addEventListener("submit", async e => {
+    if (e.submitter?.value !== "ok") return;
+    e.preventDefault();
+    const wait = Math.ceil((pwLockUntil - Date.now()) / 1000);
+    if (wait > 0) { pwMsg.textContent = `${wait} 秒後にもう一度お試しください。`; return; }
+    const ok = (await sha256Hex(PW_SALT + pwInput.value)) === String(window.ADMIN_PASSWORD_HASH).toLowerCase();
+    if (ok) { pwFails = 0; pwDlg.close("ok"); return; }
+    pwFails++; pwInput.select();
+    if (pwFails >= 5) { pwFails = 0; pwLockUntil = Date.now() + 30000; pwMsg.textContent = "5回まちがえました。30秒後にもう一度お試しください。"; }
+    else pwMsg.textContent = "パスワードがちがいます。";
+  });
+  document.querySelectorAll("dialog [data-close]").forEach(b => b.addEventListener("click", () => b.closest("dialog").close("cancel")));
+  pwDlg.addEventListener("close", () => { const r = pwResolve; pwResolve = null; r?.(pwDlg.returnValue === "ok"); });
+
+  $("#manageBtn").addEventListener("click", async () => {
+    if (!manage && !(await askAdminPassword())) return;
+    manage = !manage;
+    $("#manageBtn").classList.toggle("on", manage);
+    $("#manageBtn").setAttribute("aria-pressed", manage);
+    $("#manageBar").hidden = !manage;
+    render();
+  });
+
+  /* ---------- delete / restore ---------- */
+  function removeItem(id) {
+    const m = find(id);
+    if (!m || !confirm(`「${m.title}」を削除しますか？`)) return;
+    if (m.builtin) { hidden.add(id); lsSet(LS_HIDDEN, [...hidden]); }
+    else {
+      custom = custom.filter(x => x.id !== id);
+      lsSet(LS_CUSTOM, custom);
+      if (m.fileKey) idb.del(m.fileKey).catch(() => {});
+    }
+    render();
+    toast(`「${m.title}」を削除しました`);
+  }
+  $("#restoreBtn").addEventListener("click", () => {
+    const n = hidden.size;
+    hidden.clear(); lsSet(LS_HIDDEN, []);
+    render();
+    toast(`${n} 件の資料を元に戻しました`);
+  });
+
+  /* ---------- add ---------- */
+  const dlg = $("#addDlg"), form = $("#addForm");
+  const updatePreview = () => { const pv = $("#pv"); pv.textContent = form.emoji.value || "📘"; pv.style.background = form.color.value; };
+  const updateSrc = () => { const f = form.src.value === "file"; $("#fileField").hidden = !f; $("#urlField").hidden = f; };
+  form.addEventListener("input", updatePreview);
+  form.addEventListener("change", updateSrc);
+  form.file.addEventListener("change", () => {
+    const f = form.file.files[0];
+    if (f && !form.title.value) form.title.value = f.name.replace(/\.html?$/i, "").replace(/[-_]+/g, " ");
+  });
+  function openAdd() { form.reset(); updatePreview(); updateSrc(); dlg.showModal(); }
+  $("#addBtn").addEventListener("click", openAdd);
+
+  form.addEventListener("submit", async e => {
+    if (e.submitter?.value !== "ok") return;
+    e.preventDefault();
+    const title = form.title.value.trim();
+    if (!title) return form.title.reportValidity();
+    const id = "custom-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const item = {
+      id, title,
+      description: form.description.value.trim(),
+      category: form.category.value.trim() || "その他",
+      level: form.level.value,
+      duration: form.duration.value.trim(),
+      tags: form.tags.value.split(/[,、]/).map(s => s.trim()).filter(Boolean),
+      emoji: form.emoji.value.trim() || "📘",
+      color: form.color.value,
+      date: new Date().toISOString().slice(0, 10),
+    };
+    if (form.src.value === "file") {
+      const f = form.file.files[0];
+      if (!f) { alert("HTMLファイルを選んでください。"); return; }
+      try { await idb.put(id, await f.text()); }
+      catch { alert("ファイルを保存できませんでした（プライベートブラウズでは保存できない場合があります）。"); return; }
+      item.fileKey = id;
+    } else {
+      const url = form.url.value.trim();
+      if (!url || /^\s*(javascript|data):/i.test(url)) { alert("URL またはパスを入力してください。"); return; }
+      item.path = url;
+    }
+    custom.push(item);
+    if (!lsSet(LS_CUSTOM, custom)) {
+      custom.pop();
+      if (item.fileKey) idb.del(item.fileKey).catch(() => {});
+      alert("保存できませんでした。");
+      return;
+    }
+    dlg.close();
+    render();
+    toast(`「${title}」を追加しました`);
+  });
+
+  /* ---------- viewer ---------- */
+  let blobUrl = null;
+  async function openItem(id) {
+    const m = find(id);
+    if (!m) { location.hash = ""; toast("資料が見つかりません"); return; }
+    let src = m.path;
+    if (m.builtin && window.MATERIALS_VERSION) src += (src.includes("?") ? "&" : "?") + "v=" + encodeURIComponent(window.MATERIALS_VERSION);
+    if (m.fileKey) {
+      const html = await idb.get(m.fileKey).catch(() => null);
+      if (html == null) { location.hash = ""; toast("資料ファイルが見つかりません"); return; }
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      blobUrl = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+      src = blobUrl;
+    }
+    countView(m);
+    $("#viewerTitle").textContent = m.title;
+    $("#tabBtn").href = src;
+    $("#shareBtn").hidden = !!m.fileKey; // このブラウザだけの資料は共有できない
+    document.title = m.title + " | Knowledge Site";
+    frame.src = src;
+    viewer.hidden = false;
+    home.hidden = true;
+    frame.focus();
+  }
+  function closeItem() {
+    frame.src = "about:blank";
+    if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
+    viewer.hidden = true;
+    home.hidden = false;
+    render();
+    loadCounts();
+    document.title = "Knowledge Site | 勉強会資料ライブラリ";
+    if (document.fullscreenElement) document.exitFullscreen?.();
+  }
+  function route() {
+    const m = location.hash.match(/^#\/view\/(.+)$/);
+    if (m) openItem(decodeURIComponent(m[1]));
+    else if (!viewer.hidden) closeItem();
+  }
+  window.addEventListener("hashchange", route);
+
+  $("#backBtn").addEventListener("click", () => { location.hash = ""; });
+  $("#shareBtn").addEventListener("click", async () => {
+    const url = location.href;
+    try {
+      if (navigator.share && matchMedia("(pointer:coarse)").matches) await navigator.share({ title: document.title, url });
+      else { await navigator.clipboard.writeText(url); toast("URLをコピーしました"); }
+    } catch {}
+  });
+  $("#fsBtn").addEventListener("click", () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else viewer.requestFullscreen?.().catch(() => toast("全画面にできませんでした"));
+  });
+  if (!document.fullscreenEnabled) $("#fsBtn").hidden = true;
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !viewer.hidden && !document.fullscreenElement) location.hash = ""; });
+
+  /* ---------- toast ---------- */
+  let toastTimer;
+  function toast(msg) {
+    let t = $(".toast");
+    if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); document.body.append(t); }
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.hidden = true, 2200);
+  }
+
+  render();
+  route();
+  loadCounts();
+})();
+</script>
+</body>
+</html>
