@@ -1,0 +1,87 @@
+{
+ "bodyPx": 338.3,
+ "domeHPx": 163.4,
+ "cameraHousingPx": 161.2,
+ "cameraLensPx": 87.5,
+ "arms": {
+  "T1": {
+   "segments": 14,
+   "lengthPx": 564.7,
+   "rootPx": 66.1,
+   "curlPx": 86.1,
+   "length3D": 4.173
+  },
+  "T2": {
+   "segments": 13,
+   "lengthPx": 475.8,
+   "rootPx": 66.5,
+   "curlPx": 85.9,
+   "length3D": 3.46
+  },
+  "T3": {
+   "segments": 13,
+   "lengthPx": 637.1,
+   "rootPx": 70.2,
+   "curlPx": 110.4,
+   "length3D": 3.69
+  },
+  "T4": {
+   "segments": 13,
+   "lengthPx": 583.3,
+   "rootPx": 73.5,
+   "curlPx": 117.4,
+   "length3D": 3.486
+  },
+  "T5": {
+   "segments": 12,
+   "lengthPx": 565.8,
+   "rootPx": 75.1,
+   "curlPx": 114.2,
+   "length3D": 3.489
+  },
+  "T6": {
+   "segments": 13,
+   "lengthPx": 568.8,
+   "rootPx": 74.4,
+   "curlPx": 109.8,
+   "length3D": 3.483
+  },
+  "T7": {
+   "segments": 14,
+   "lengthPx": 707,
+   "rootPx": 70.6,
+   "curlPx": 118.4,
+   "length3D": 3.869
+  },
+  "T8": {
+   "segments": 12,
+   "lengthPx": 200.2,
+   "rootPx": 63.9,
+   "curlPx": 66.5,
+   "length3D": 3.288
+  }
+ },
+ "stats": {
+  "fps": 0,
+  "fpsLog": [],
+  "tier": "high",
+  "transmission": true,
+  "pixelRatio": 1,
+  "calls": 461,
+  "triangles": 1354428,
+  "geometries": 165,
+  "textures": 9,
+  "smallParts": 1885,
+  "segments": 104,
+  "perArm": [
+   14,
+   13,
+   13,
+   13,
+   12,
+   13,
+   14,
+   12
+  ]
+ }
+}

@@ -89,6 +89,11 @@ const waitCam = async (p, cond, timeout = 60000) => {
   try { await p.waitForFunction(() => document.getElementById('c').width === 900, null, {timeout: 60000}); } catch {}
   const sz = await p.evaluate(() => ({w: document.getElementById('c').width, h: document.getElementById('c').height}));
   ok('desktop: resize updates the drawing buffer', sz.w === 900 && sz.h === 900, JSON.stringify(sz));
+  const mem = await p.evaluate(() => ({
+    jsHeapMB: performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(1) : null,
+    geometries: window.__octo.stats().geometries, textures: window.__octo.stats().textures,
+  }));
+  ok('desktop: memory (Chromium performance.memory + three renderer.info)', mem.geometries > 0, JSON.stringify(mem));
   ok('desktop: no page / WebGL errors', errors.length === 0, errors.join(' | '));
   await p.close();
 }
@@ -128,13 +133,21 @@ const waitCam = async (p, cond, timeout = 60000) => {
     await touch('touchEnd', []);
     await p.waitForTimeout(120);
   }
-  await settle(p, 1600);
-  const m3 = await camState(p);
+  const m3 = await waitCam(p, 'Math.abs(window.__octo.camState().az - 35) < 1');
   ok('mobile: double-tap resets', Math.abs(m3.az - 35) < 2, `az=${m3.az.toFixed(1)}`);
   // UI buttons reachable by tap
   await p.tap('#autoBtn');
   ok('mobile: tap auto-rotate button', (await p.getAttribute('#autoBtn', 'aria-pressed')) === 'true');
   await p.tap('#autoBtn');
+  // rotate to landscape: the drawing buffer follows (pixel ratio 1.5 on this tier)
+  await p.setViewportSize({width: 844, height: 390});
+  let rot = null;
+  try {
+    await p.waitForFunction(() => document.getElementById('c').width === Math.round(844 * window.__octo.stats().pixelRatio), null, {timeout: 60000});
+    rot = await p.evaluate(() => ({w: document.getElementById('c').width, h: document.getElementById('c').height}));
+  } catch {}
+  ok('mobile: rotate to landscape resizes the canvas', !!rot, JSON.stringify(rot));
+  await p.setViewportSize({width: 390, height: 844});
   const overflow = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   ok('mobile: no horizontal overflow', !overflow);
   try { await p.screenshot({path: 'screenshots/mobile.png', scale: 'css', timeout: 180000}); } catch (e) { ok('mobile: screenshot', false, e.message.split('\n')[0]); }

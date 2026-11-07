@@ -1,0 +1,122 @@
+{
+ "ratios": {
+  "body / total width": {
+   "ref": 0.354,
+   "render": 0.316,
+   "diff_pct": -10.7
+  },
+  "dome height / body": {
+   "ref": 0.611,
+   "render": 0.483,
+   "diff_pct": -20.9
+  },
+  "tentacle length / body (upper-right raised)": {
+   "ref": 1.491,
+   "render": 1.669,
+   "diff_pct": 11.9
+  },
+  "tentacle length / body (left side)": {
+   "ref": 1.207,
+   "render": 1.883,
+   "diff_pct": 56.0
+  },
+  "tentacle length / body (front)": {
+   "ref": 0.878,
+   "render": 1.672,
+   "diff_pct": 90.5
+  },
+  "tentacle root / body": {
+   "ref": 0.227,
+   "render": 0.222,
+   "diff_pct": -2.3
+  },
+  "camera housing / body": {
+   "ref": 0.355,
+   "render": 0.477,
+   "diff_pct": 34.2
+  },
+  "camera lens / body": {
+   "ref": 0.233,
+   "render": 0.259,
+   "diff_pct": 11.0
+  },
+  "tip curl / body": {
+   "ref": 0.241,
+   "render": 0.255,
+   "diff_pct": 5.4
+  },
+  "total height / total width": {
+   "ref": 0.638,
+   "render": 0.633,
+   "diff_pct": -0.8
+  }
+ },
+ "colour": {
+  "dark_density": {
+   "ref": 0.282,
+   "render": 0.392,
+   "render_over_ref": 1.39
+  },
+  "dark_structure": {
+   "ref": 0.206,
+   "render": 0.202,
+   "render_over_ref": 0.98
+  },
+  "white": {
+   "ref": 0.32,
+   "render": 0.386,
+   "render_over_ref": 1.21
+  },
+  "green": {
+   "ref": 0.092,
+   "render": 0.068,
+   "render_over_ref": 0.74
+  }
+ },
+ "shape_px": {
+  "bodyPx": 338.3,
+  "totalW": 1071,
+  "totalH": 678,
+  "domeHPx": 163.4,
+  "rootPx": 75.1,
+  "cameraHousingPx": 161.2,
+  "cameraLensPx": 87.5,
+  "curlPx": 86.1,
+  "lenB": 564.7,
+  "lenC": 637.1,
+  "lenF": 565.8
+ },
+ "segments": {
+  "T1": 14,
+  "T2": 13,
+  "T3": 13,
+  "T4": 13,
+  "T5": 12,
+  "T6": 13,
+  "T7": 14,
+  "T8": 12
+ },
+ "stats": {
+  "fps": 0,
+  "fpsLog": [],
+  "tier": "high",
+  "transmission": true,
+  "pixelRatio": 1,
+  "calls": 461,
+  "triangles": 1354428,
+  "geometries": 165,
+  "textures": 9,
+  "smallParts": 1885,
+  "segments": 104,
+  "perArm": [
+   14,
+   13,
+   13,
+   13,
+   12,
+   13,
+   14,
+   12
+  ]
+ }
+}

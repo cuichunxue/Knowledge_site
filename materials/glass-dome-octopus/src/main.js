@@ -5,6 +5,7 @@ import {createStudio} from './lighting.js';
 import {makeMaterials} from './materials.js';
 import {buildOctopus} from './octopus.js';
 import {HERO_AZ} from './tentacles.js';
+import {createMeasure} from './measure.js';
 
 const params = new URLSearchParams(location.search);
 const $ = (s) => document.querySelector(s);
@@ -62,6 +63,7 @@ const VIEWS = {
   side: () => ({target: TARGET, az: 90, el: 12, dist: fitDist(1.02)}),
   rear: () => ({target: TARGET, az: 180, el: 16, dist: fitDist(1.02)}),
   top: () => ({target: TARGET, az: HERO_AZ, el: 70, dist: fitDist(1.05)}),
+  oblique: () => ({target: TARGET, az: 45, el: 30, dist: fitDist(0.95)}),
 };
 let needsRender = true;
 const ctl = createControls(camera, canvas, {target: TARGET, home: () => VIEWS.hero(), onChange: () => (needsRender = true)});
@@ -237,6 +239,14 @@ window.__octo = {
   camera,
   controls: ctl.controls,
   setView,
+  // put the camera at any orbit (degrees), for the 360° check
+  orbitTo: (az, el, k = 1) => {
+    camera.position.copy(orbit(TARGET, az, el, fitDist(k)));
+    ctl.controls.target.copy(TARGET);
+    camera.lookAt(TARGET);
+    ctl.controls.update();
+    renderer.render(scene, camera);
+  },
   camState: () => {
     const d = camera.position.clone().sub(ctl.controls.target);
     return {az: Math.atan2(d.x, d.z) * 180 / Math.PI, dist: d.length(), el: Math.asin(d.y / d.length()) * 180 / Math.PI};
@@ -268,6 +278,9 @@ window.__octo = {
   },
 };
 let forceOn = false;
+const meas = createMeasure({renderer, scene, camera, octo, canvas});
+window.__octo.measure = meas.measure;
+window.__octo.mask = meas.mask;
 const _upd = ctl.update;
 ctl.update = () => _upd() || forceOn;
 

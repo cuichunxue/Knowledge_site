@@ -38,7 +38,7 @@ export function createStudio(renderer, scene, tier) {
 
   // ---- lights
   const key = new THREE.DirectionalLight('#fffaf3', 3.1);
-  key.position.set(-2.2, 10, 3.2);
+  key.position.set(-1.6, 11, 2.4); // more overhead: the reference's shadow pools under the body
   key.target.position.set(0, 0.8, 0);
   key.castShadow = true;
   const span = 4.2;
@@ -58,7 +58,7 @@ export function createStudio(renderer, scene, tier) {
   scene.add(new THREE.HemisphereLight('#ffffff', '#b9beba', 0.3));
 
   // ---- floor: only the shadows draw (the background colour shows everywhere else)
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({color: '#203028', opacity: 0.16}));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({color: '#203028', opacity: 0.13}));
   floor.receiveShadow = true;
   floor.name = 'floor';
   scene.add(floor);

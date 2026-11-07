@@ -14,27 +14,31 @@ import {D2R, V3, cylX, merge, ringProfile, solid, sweepX} from './geometry.js';
 const ring = (x0, x1, r0, r1, round, opts) => sweepX(ringProfile(x0, x1, r0, r1, round, 1), opts);
 
 export const SEG_L = 1.9; // segment length / segment radius (reference: a segment is about as long as it is thick)
-const R0 = 0.2; // root radius (reference: root diameter 0.20 of the body width 2.0 -> 0.40)
-const RT = 0.058; // tip radius (reference: 0.3 of the root)
+// STEP 3: root diameter 0.46 = 0.24 of the glass diameter 1.93 (reference 0.23), and a slow taper: the reference arm
+// is still ~0.73 of its root thickness half way out, ~0.46 at the start of the curl and ~0.25 at the tip.
+const R0 = 0.23;
+const TAPER = (u) => (1 - 0.72 * Math.pow(u, 1.5)) * (u > 0.8 ? 1 - 1.4 * (u - 0.8) : 1);
 
 // screen angle theta: 0 = toward the hero camera, 90 = screen right, 180 = away, 270 = screen left
 export const HERO_AZ = 35; // hero camera azimuth in degrees (0 = +z, 90 = +x)
-// n: number of segments (each arm its own, as in the reference where 13-16 show)
+// The reference's 8 arms, read off the picture: 2 raised behind (upper left, upper right), 2 straight out to the
+// sides at mid-body height whose tips curl down, and 4 down / toward the viewer onto the floor. None points away.
+// n: segments per arm (13-16 show in the reference).
 export const TENTACLES = [
-  {name: 'T1', theta: 122, kind: 'raised', n: 14, reach: 2.55, peak: 2.25, lat: [0.15, 0.35, 0.3], curl: {R: 0.34, turns: 1.15, tilt: 15}},
-  {name: 'T2', theta: 243, kind: 'raised', n: 13, reach: 2.45, peak: 1.85, lat: [-0.1, -0.3, -0.25], curl: {R: 0.3, turns: 1.1, tilt: -20}},
-  {name: 'T3', theta: 282, kind: 'floor', n: 13, reach: 2.6, lat: [0.15, 0.3, 0.1], curl: {R: 0.3, turns: 1.2, tilt: 10}},
-  {name: 'T4', theta: 318, kind: 'floor', n: 13, reach: 2.45, lat: [-0.1, -0.35, -0.45], curl: {R: 0.3, turns: 1.15, tilt: -82}},
-  {name: 'T5', theta: 352, kind: 'floor', n: 12, reach: 2.25, lat: [0.15, 0.35, 0.5], curl: {R: 0.3, turns: 1.15, tilt: 84}},
-  {name: 'T6', theta: 27, kind: 'floor', n: 13, reach: 2.45, lat: [0.05, 0.3, 0.2], curl: {R: 0.3, turns: 1.15, tilt: 80}},
-  {name: 'T7', theta: 74, kind: 'floor', n: 14, reach: 2.75, lat: [-0.1, -0.25, -0.3], curl: {R: 0.32, turns: 1.2, tilt: -10}},
-  {name: 'T8', theta: 170, kind: 'floor', n: 12, reach: 2.4, lift: 0.45, lat: [0.2, 0.4, 0.35], curl: {R: 0.28, turns: 1.15, tilt: 25}},
+  {name: 'T1', theta: 120, kind: 'raised', n: 15, reach: 2.75, peak: 0.78, lat: [0.15, 0.3, 0.25], curl: {R: 0.3, turns: 1.1, tilt: 15}},
+  {name: 'T2', theta: 238, kind: 'raised', n: 14, reach: 2.6, peak: 0.32, lat: [-0.1, -0.25, -0.2], curl: {R: 0.28, turns: 1.05, tilt: -20}},
+  {name: 'T3', theta: 270, kind: 'side', n: 14, reach: 2.75, h: -0.22, lat: [0.12, 0.32, 0.12], curl: {R: 0.28, turns: 1.05, tilt: 10}},
+  {name: 'T7', theta: 90, kind: 'side', n: 14, reach: 2.55, h: -0.15, lat: [-0.12, -0.3, -0.12], curl: {R: 0.27, turns: 1.05, tilt: -10}},
+  {name: 'T4', theta: 298, kind: 'floor', n: 14, reach: 2.3, lat: [-0.05, -0.2, -0.3], curl: {R: 0.34, turns: 0.95, tilt: -45}},
+  {name: 'T8', theta: 330, kind: 'floor', n: 13, reach: 1.7, lat: [0.05, 0.1, 0.05], curl: {R: 0.34, turns: 0.95, tilt: -80}},
+  {name: 'T5', theta: 2, kind: 'floor', n: 13, reach: 1.42, lat: [0.1, 0.2, 0.25], curl: {R: 0.34, turns: 0.95, tilt: 75}},
+  {name: 'T6', theta: 42, kind: 'floor', n: 14, reach: 2.2, lat: [0.05, 0.2, 0.15], curl: {R: 0.34, turns: 0.95, tilt: 55}},
 ];
 
-const BODY_Y = 1.45; // body centre height (collar plane); the body sits low, as in the reference
-const ROOT_POLAR = 118 * D2R;
+const BODY_Y = 1.45; // body centre height; the body sits low, as in the reference
+const ROOT_POLAR = 124 * D2R;
 
-const radiusAt = (u) => RT + (R0 - RT) * Math.pow(1 - u, 1.15);
+const radiusAt = (u) => R0 * TAPER(Math.min(1, u));
 
 /** The centre line of one tentacle, in octopus-root coordinates. */
 function centreLine(spec) {
@@ -43,19 +47,23 @@ function centreLine(spec) {
   const up = new V3(0, 1, 0);
   const side = new V3().crossVectors(up, out).normalize();
   const P = (s, h, l = 0) => out.clone().multiplyScalar(s).addScaledVector(up, h).addScaledVector(side, l);
-  const s0 = Math.sin(ROOT_POLAR) * 0.96;
-  const h0 = BODY_Y + Math.cos(ROOT_POLAR) * 0.96;
+  const s0 = Math.sin(ROOT_POLAR) * 0.92;
+  const h0 = BODY_Y + Math.cos(ROOT_POLAR) * 0.92;
   const [l1, l2, l3] = spec.lat;
   const pts = [P(s0, h0)];
-  let down; // which way the tip curls: +up for floor arms, -up for raised arms
+  let down; // which way the tip curls: +up for floor arms, -up for raised and side arms
   if (spec.kind === 'raised') {
-    const pk = spec.peak;
-    pts.push(P(s0 + 0.32, h0 + 0.1, l1 * 0.4), P(1.45, pk - 0.45, l1), P(1.95, pk, l2), P(spec.reach, pk - 0.2, l3));
+    const pk = BODY_Y + spec.peak;
+    pts.push(P(s0 + 0.32, h0 + 0.12, l1 * 0.4), P(1.35, pk - 0.4, l1), P(1.8, pk, l2), P(spec.reach, pk - 0.2, l3));
+    down = -1;
+  } else if (spec.kind === 'side') {
+    // straight out at mid-body height, a slight sag, then the tip curls under
+    const hs = BODY_Y + spec.h;
+    pts.push(P(s0 + 0.32, h0 + 0.02, l1 * 0.4), P(1.4, hs + 0.04, l1), P(1.85, hs, l2), P(spec.reach, hs - 0.15, l3));
     down = -1;
   } else {
-    const lift = spec.lift || 0;
-    pts.push(P(s0 + 0.36, h0 - 0.16, l1 * 0.4), P(1.62, 0.5 + lift * 0.8, l1), P(2.02, 0.2 + lift, l2),
-      P(spec.reach - 0.3, 0.13 + lift * 0.7, l3), P(spec.reach, 0.11 + lift * 0.55, l3 * 1.15));
+    pts.push(P(s0 + 0.32, h0 - 0.22, l1 * 0.4), P(1.35, 0.42, l1), P(1.62, 0.22, l2),
+      P(spec.reach - 0.22, 0.16, l3), P(spec.reach, 0.15, l3 * 1.1));
     down = 1;
   }
   // the curl: a shrinking spiral that starts along the arm's last direction and turns toward n
@@ -81,46 +89,58 @@ function centreLine(spec) {
 // ------------------------------------------------------------ unit part geometries (radius 1, along +x)
 function unitParts() {
   const L = SEG_L;
-  // armour: two rounded plates over the top and sides; the underside (90 deg) stays open on the dark core.
-  // The plates stop at 0.76 of the segment so a dark joint gap shows between segments (reference: ~0.25).
-  const X1 = 1.27;
+  // STEP 3 armour: an overlapping shell (armadillo-like) instead of separate white blocks. Each shell flares at its
+  // rear lip (r 1.07) and overhangs the joint, so neighbouring segments read as layered plates, not zebra stripes.
+  const X1 = 1.55;
   const plate = (a0, a1) => sweepX([
-    [0.08, 0.84], [0.08, 0.9], [0.15, 0.975], [0.3, 1.0], [X1 - 0.22, 1.0], [X1 - 0.07, 0.975], [X1, 0.9], [X1, 0.84],
-  ], {a0, a1, segs: 16, smooth: 50});
-  const shell = merge([plate(-128 * D2R, -5 * D2R), plate(5 * D2R, 128 * D2R)]);
+    [0.04, 0.92], [0.12, 0.99], [0.35, 1.01], [1.3, 1.03], [1.47, 1.07], [X1, 1.04], [X1, 0.95], [1.4, 0.9], [0.04, 0.86],
+  ], {a0, a1, segs: 16, smooth: 40});
+  const shell = merge([plate(-122 * D2R, -4 * D2R), plate(4 * D2R, 122 * D2R)]);
+  // a dark panel seam across the shell, splitting it into a front and a rear plate
+  const seam = merge([
+    sweepX(ringProfile(0.86, 0.9, 0.99, 1.035, 0.008, 1), {a0: -122 * D2R, a1: -4 * D2R, segs: 12}),
+    sweepX(ringProfile(0.86, 0.9, 0.99, 1.035, 0.008, 1), {a0: 4 * D2R, a1: 122 * D2R, segs: 12}),
+  ]);
+  // a second, grey under-plate on each lower flank (the layered side armour of the reference)
+  const under = merge([
+    sweepX(ringProfile(0.2, 1.42, 0.86, 0.98, 0.03, 1), {a0: 118 * D2R, a1: 160 * D2R, segs: 8}),
+    sweepX(ringProfile(0.2, 1.42, 0.86, 0.98, 0.03, 1), {a0: -160 * D2R, a1: -118 * D2R, segs: 8}),
+  ]);
   // dark structural core running through the whole segment
   const core = cylX(0.8, 0.76, L, 16).translate(L / 2, 0, 0);
-  // the rotary joint between this segment and the next: two dark rings with a groove
-  const joint = merge([ring(X1 + 0.02, X1 + 0.2, 0.6, 0.9, 0.03, {segs: 24}), ring(X1 + 0.26, L + 0.03, 0.6, 0.86, 0.02, {segs: 24})]);
+  // the rotary joint: two titanium rings with a groove (grey metal, not black: reference joints read as dark steel)
+  const joint = merge([ring(X1 + 0.02, X1 + 0.16, 0.6, 0.86, 0.025, {segs: 24}), ring(X1 + 0.2, L + 0.04, 0.6, 0.82, 0.02, {segs: 24})]);
+  // a thin green line in the joint's groove (the reference's lit joint rings)
+  const jointGlow = ring(X1 + 0.165, X1 + 0.195, 0.8, 0.845, 0.006, {segs: 24});
   // hinge pins on both flanks of the joint
   const pins = merge([
-    new THREE.CylinderGeometry(0.12, 0.12, 0.14, 10).rotateX(Math.PI / 2).translate(X1 + 0.23, 0, 0.92),
-    new THREE.CylinderGeometry(0.12, 0.12, 0.14, 10).rotateX(Math.PI / 2).translate(X1 + 0.23, 0, -0.92),
+    new THREE.CylinderGeometry(0.12, 0.12, 0.14, 10).rotateX(Math.PI / 2).translate(X1 + 0.18, 0, 0.88),
+    new THREE.CylinderGeometry(0.12, 0.12, 0.14, 10).rotateX(Math.PI / 2).translate(X1 + 0.18, 0, -0.88),
   ]);
-  // suction pads: dark cup + glowing green rim + black eye; 2 on the lower flanks at the joint, 2 on the underside
+  // suction pads: dark cup + glowing green rim + black eye; 2 on the underside, 2 on the joint's lower flanks
   const padAt = (x, a, out) => new THREE.Matrix4().makeRotationX(a).multiply(new THREE.Matrix4().makeTranslation(x, out, 0));
-  const cup = new THREE.CylinderGeometry(0.26, 0.3, 0.16, 16);
-  const rim = new THREE.TorusGeometry(0.22, 0.055, 6, 20).rotateX(Math.PI / 2).translate(0, 0.085, 0);
+  const cup = new THREE.CylinderGeometry(0.27, 0.31, 0.16, 16);
+  const rim = new THREE.TorusGeometry(0.245, 0.068, 6, 20).rotateX(Math.PI / 2).translate(0, 0.085, 0);
   const eye = new THREE.CylinderGeometry(0.11, 0.11, 0.2, 10);
-  const padMats = [padAt(X1 + 0.23, 180 * D2R - 1.95, 0.9), padAt(X1 + 0.23, 180 * D2R + 1.95, 0.9), padAt(0.75, 180 * D2R - 0.5, 0.8), padAt(0.75, 180 * D2R + 0.5, 0.8)];
+  const padMats = [padAt(0.8, 180 * D2R - 0.48, 0.82), padAt(0.8, 180 * D2R + 0.48, 0.82), padAt(X1 + 0.18, 180 * D2R - 1.95, 0.84), padAt(X1 + 0.18, 180 * D2R + 1.95, 0.84)];
   const pads = merge(padMats.map((mm) => cup.clone().applyMatrix4(mm)));
   const padGlow = merge(padMats.map((mm) => rim.clone().applyMatrix4(mm)));
   const padEye = merge(padMats.map((mm) => eye.clone().applyMatrix4(mm)));
-  // dark slots cut into the plates' flanks (the reference's black windows), one per flank
-  const slot = (x, a, w) => new THREE.BoxGeometry(w, 0.06, 0.2).translate(0, 0.99, 0).applyMatrix4(new THREE.Matrix4().makeRotationX(a)).translate(x, 0, 0);
-  const slots = merge([slot(0.68, 72 * D2R, 0.5), slot(0.68, -72 * D2R, 0.5), slot(0.66, 0, 0.5)]);
-  // bolts at the plate corners
+  // dark slots cut into the shell: one along the top, one on each flank
+  const slot = (x, a, w) => new THREE.BoxGeometry(w, 0.06, 0.18).translate(0, 1.02, 0).applyMatrix4(new THREE.Matrix4().makeRotationX(a)).translate(x, 0, 0);
+  const slots = merge([slot(0.75, 64 * D2R, 0.46), slot(0.75, -64 * D2R, 0.46), slot(0.72, 0, 0.42)]);
+  // bolts at the shell corners
   const bolt = new THREE.CylinderGeometry(0.05, 0.05, 0.06, 6);
-  const bolts = merge([[0.32, 24], [0.32, -24], [X1 - 0.2, 24], [X1 - 0.2, -24]].map(([x, a]) =>
-    bolt.clone().translate(0, 1.0, 0).applyMatrix4(new THREE.Matrix4().makeRotationX(a * D2R)).translate(x, 0, 0)));
+  const bolts = merge([[0.3, 26], [0.3, -26], [1.25, 26], [1.25, -26]].map(([x, a]) =>
+    bolt.clone().translate(0, 1.02, 0).applyMatrix4(new THREE.Matrix4().makeRotationX(a * D2R)).translate(x, 0, 0)));
   // the tip: a rounded white cap with a thin green ring (the reference's green tips)
   const tip = solid(0.05, 2.1, (u) => (u < 0.82 ? 1 - 0.5 * u : (1 - 0.5 * 0.82) * Math.sqrt(Math.max(0, 1 - ((u - 0.82) / 0.18) ** 2))), {segs: 20}, 16);
   const tipGlow = ring(1.4, 1.52, 0.6, 0.66, 0.01, {segs: 20});
   // the root collar where the arm leaves the body: a white cowl, a dark ring, a green line
-  const collar = ring(-0.6, 0.3, 0.95, 1.34, 0.06, {segs: 32});
-  const collarDark = ring(0.28, 0.52, 0.8, 1.14, 0.03, {segs: 32});
-  const collarGlow = ring(0.3, 0.36, 1.13, 1.18, 0.01, {segs: 32});
-  return {shell, core, joint, pins, pads, padGlow, padEye, slots, bolts, tip, tipGlow, collar, collarDark, collarGlow};
+  const collar = ring(-0.6, 0.3, 0.95, 1.3, 0.06, {segs: 32});
+  const collarDark = ring(0.28, 0.5, 0.8, 1.12, 0.03, {segs: 32});
+  const collarGlow = ring(0.3, 0.36, 1.11, 1.16, 0.01, {segs: 32});
+  return {shell, seam, jointGlow, under, core, joint, pins, pads, padGlow, padEye, slots, bolts, tip, tipGlow, collar, collarDark, collarGlow};
 }
 
 /**
@@ -212,6 +232,9 @@ export function buildTentacles(mats) {
   const layers = [
     // [geometry, material, which joints]
     [U.shell, mats.shell, segJoints],
+    [U.seam, mats.titanium, segJoints],
+    [U.jointGlow, mats.glow, segJoints],
+    [U.under, mats.titanium, segJoints],
     [U.core, mats.graphite, segJoints],
     [U.joint, mats.titanium, segJoints],
     [U.pins, mats.steel, segJoints],

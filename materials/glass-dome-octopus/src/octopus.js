@@ -47,7 +47,11 @@ export function buildOctopus(mats) {
   const anchors = {};
 
   // ================================================================ collar (holds the dome)
-  const collar = group(body, 'collar', new V3(1.06, 0, 0));
+  // STEP 3: the glass covers the top ~60 % of the sphere (reference: glass top to armour edge = 0.61 of the
+  // diameter), so the collar holding it sits below the equator.
+  const CY = -0.2;
+  const collar = group(body, 'collar', new V3(1.06, CY, 0));
+  collar.position.y = CY;
   put(collar, latheY(ringProfile(-0.07, 0.08, 0.92, 1.075, 0.025), 0, Math.PI * 2, {segs: 96}), mats.shell);
   put(collar, latheY(ringProfile(-0.13, -0.06, 0.88, 1.0, 0.012), 0, Math.PI * 2, {segs: 96}), mats.titanium);
   put(collar, latheY(ringProfile(-0.012, 0.012, 1.07, 1.085, 0.004), 0, Math.PI * 2, {segs: 96}), mats.glow);
@@ -63,7 +67,7 @@ export function buildOctopus(mats) {
 
   // ================================================================ glass dome
   const domeG = group(body, 'glass-dome', new V3(0, 1.0, 0));
-  const glass = put(domeG, new THREE.SphereGeometry(0.965, 96, 48, 0, Math.PI * 2, 0, Math.PI * 0.5 + 0.06), mats.glass);
+  const glass = put(domeG, new THREE.SphereGeometry(0.965, 96, 52, 0, Math.PI * 2, 0, Math.PI * 0.5 + 0.23), mats.glass);
   glass.name = 'dome-glass';
   glass.castShadow = false;
   glass.receiveShadow = false;
@@ -71,7 +75,12 @@ export function buildOctopus(mats) {
   anchors.dome = sph(40 * D2R, -55 * D2R, 0.97).add(new V3(0, BODY_Y, 0)); // on the glass, front-left (world)
 
   // ================================================================ inside the dome
-  const inner = group(body, 'mechanism-upper', new V3(0, 0.4, 0));
+  const inner = group(body, 'mechanism-upper', new V3(0, 0.25, 0));
+  // the mechanism grows with the taller glass: deck at the collar, top unit just under the crown
+  inner.position.y = CY + 0.02;
+  inner.scale.setScalar(1.08);
+  // a soft green ring of light round the deck edge, seen through the lower glass (reference: green-lit interior)
+  put(inner, latheY(ringProfile(0.06, 0.085, 0.8, 0.84, 0.006), 0, Math.PI * 2, {segs: 64}), mats.glowSoft);
   // deck plate and a stepped ring around it
   put(inner, latheY(ringProfile(-0.05, 0.03, 0, 0.9, 0.01), 0, Math.PI * 2, {segs: 64}), mats.graphite);
   put(inner, latheY(ringProfile(0.03, 0.09, 0.62, 0.86, 0.01), 0, Math.PI * 2, {segs: 64}), mats.titanium);
@@ -91,7 +100,7 @@ export function buildOctopus(mats) {
     const gl = put(reactor, new THREE.TorusGeometry(R - t * 0.9, t * 0.35, 6, 64), mats.glow);
     gl.rotation.copy(m.rotation);
   });
-  const halo = glowSprite('#2bff9c', 1.5, 0.75);
+  const halo = glowSprite('#2bff9c', 1.35, 0.85); // 2.0 spilled outside the glass (round 2 regression)
   reactor.add(halo);
   put(reactor, cylX(0.12, 0.16, 0.26, 24).rotateZ(Math.PI / 2), mats.titanium, 0, -0.27, 0);
   // 4 posts holding the reactor
@@ -99,7 +108,7 @@ export function buildOctopus(mats) {
     const a = i * Math.PI / 2 + Math.PI / 4;
     put(inner, new THREE.CylinderGeometry(0.022, 0.026, 0.58, 10), mats.steel, Math.sin(a) * 0.3, 0.36, Math.cos(a) * 0.3);
   }
-  anchors.reactor = new V3(0, BODY_Y + 0.4, 0);
+  anchors.reactor = null; // set after the build from the reactor's world position
   // a dark drum round the reactor, cut into 5 arcs so the glow shows through the windows
   for (let i = 0; i < 5; i++) {
     const a0 = (i / 5) * Math.PI * 2 - 0.407; // windows centred on az 35 (the hero view) and every 72 deg
@@ -129,7 +138,8 @@ export function buildOctopus(mats) {
   gearSpec.forEach(([R, n], i) => {
     const a = (i / 6) * Math.PI * 2 + 1.134; // leaves a gap toward the hero view so the core shows
     const dir = new V3(Math.sin(a), 0, Math.cos(a));
-    const g = new THREE.Mesh(gearGeo(n, R, R - 0.035, 0.045, 0.05, 5), i % 2 ? mats.graphite : mats.titanium);
+    // brass on every third gear: the reference's interior shows warm metal among the dark steel
+    const g = new THREE.Mesh(gearGeo(n, R, R - 0.035, 0.045, 0.05, 5), i % 3 === 0 ? mats.brass : i % 2 ? mats.graphite : mats.titanium);
     g.castShadow = g.receiveShadow = true;
     // gearGeo's axis is +z: turn it so the axis points along dir
     g.quaternion.setFromUnitVectors(new V3(0, 0, 1), dir);
@@ -172,7 +182,7 @@ export function buildOctopus(mats) {
   put(topUnit, gearGeo(30, 0.27, 0.245, 0.04, 0.08, 6).rotateX(Math.PI / 2), mats.titanium, 0, 0.79, 0);
   put(topUnit, latheY(ringProfile(0.81, 0.9, 0, 0.13, 0.03), 0, Math.PI * 2, {segs: 32}), mats.black);
   put(topUnit, latheY(ringProfile(0.66, 0.68, 0.3, 0.31, 0.003), 0, Math.PI * 2, {segs: 48}), mats.glow);
-  anchors.unit = new V3(0, BODY_Y + 0.82, 0);
+  anchors.unit = null; // set after the build
   // servo boxes and small parts round the deck (the dense small layer)
   {
     const boxL = [];
@@ -236,16 +246,16 @@ export function buildOctopus(mats) {
     }
     return [...out, ...inn.reverse()];
   };
-  row(93 * D2R, 116 * D2R, 10, 0.05, 0.09, [4, 8]); // equator row; windows rear-right and front-left
-  row(120 * D2R, 142 * D2R, 8, Math.PI / 8 + 0.1, 0.1, [0, 3, 6]); // windows toward the hero view, behind, front-left
-  row(146 * D2R, 157 * D2R, 8, 0.25, 0.14, [2, 6]);
+  row(104 * D2R, 124 * D2R, 10, 0.05, 0.09, [4, 8]); // band under the collar; windows rear-right and front-left
+  row(127 * D2R, 145 * D2R, 8, Math.PI / 8 + 0.1, 0.1, [0, 3, 6]); // windows toward the hero view, behind, front-left
+  row(148 * D2R, 157 * D2R, 8, 0.25, 0.14, [2, 6]);
   // bottom hub where the arms meet
   put(hull, latheY(ringProfile(-0.98, -0.86, 0, 0.42, 0.04), 0, Math.PI * 2, {segs: 48}), mats.titanium);
   put(hull, latheY(ringProfile(-1.01, -0.96, 0, 0.2, 0.02), 0, Math.PI * 2, {segs: 32}), mats.black);
   // plate bolts along the rows
   {
     const L = [];
-    for (const [p, n, off] of [[95, 20, 0.12], [118.5, 16, 0.2], [144.5, 16, 0.3]]) {
+    for (const [p, n, off] of [[106, 20, 0.12], [125.5, 16, 0.2], [146.5, 16, 0.3]]) {
       for (let i = 0; i < n; i++) {
         const a = off + (i / n) * Math.PI * 2;
         const d = sph(p * D2R, a);
@@ -283,7 +293,7 @@ export function buildOctopus(mats) {
   flare(-90 * D2R, false);
 
   // ================================================================ front camera
-  const camDir = sph(101 * D2R, 0);
+  const camDir = sph(106 * D2R, 0);
   const camera = group(hull, 'front-camera', camDir.clone().multiplyScalar(1.5));
   {
     const c = new THREE.Group();
@@ -291,22 +301,23 @@ export function buildOctopus(mats) {
     c.position.copy(camDir.clone().multiplyScalar(0.9));
     aimX(c, camDir);
     // the white cowl that wraps the housing into the hull
-    put(c, ring(-0.02, 0.2, 0.33, 0.42, 0.05, {segs: 64}), mats.shell);
-    put(c, cylX(0.36, 0.36, 0.22, 48).translate(0.0, 0, 0), mats.titanium);
-    // the housing barrel and bezels
-    put(c, ring(0.1, 0.34, 0.27, 0.37, 0.04, {segs: 64}), mats.shell);
-    put(c, ring(0.3, 0.4, 0.22, 0.29, 0.015, {segs: 64}), mats.titanium);
-    put(c, ring(0.38, 0.41, 0.205, 0.228, 0.006, {segs: 64}), mats.glow);
-    put(c, ring(0.33, 0.37, 0.15, 0.2, 0.01, {segs: 48}), mats.graphite);
+    put(c, ring(-0.04, 0.16, 0.3, 0.36, 0.04, {segs: 64}), mats.titanium); // mount flange
+    put(c, cylX(0.3, 0.3, 0.2, 48), mats.graphite);
+    // the housing barrel: protrudes from the armour like the reference's eye
+    put(c, ring(0.1, 0.46, 0.25, 0.34, 0.045, {segs: 64}), mats.shell);
+    put(c, ring(0.22, 0.26, 0.335, 0.348, 0.006, {segs: 64}), mats.titanium); // seam line round the barrel
+    put(c, ring(0.42, 0.52, 0.215, 0.275, 0.015, {segs: 64}), mats.titanium);
+    put(c, ring(0.5, 0.53, 0.212, 0.236, 0.006, {segs: 64}), mats.glow);
+    put(c, ring(0.45, 0.49, 0.15, 0.21, 0.01, {segs: 48}), mats.graphite);
     // the lens: a glossy black cap
-    const lens = put(c, new THREE.SphereGeometry(0.205, 48, 24, 0, Math.PI * 2, 0, 0.95).rotateZ(-Math.PI / 2), mats.lens, 0.2, 0, 0);
+    const lens = put(c, new THREE.SphereGeometry(0.21, 48, 24, 0, Math.PI * 2, 0, 0.95).rotateZ(-Math.PI / 2), mats.lens, 0.32, 0, 0);
     lens.name = 'lens';
     // a thin inner iris ring glimpsed through it
-    put(c, ring(0.36, 0.37, 0.06, 0.075, 0.003, {segs: 32}), mats.glowSoft);
+    put(c, ring(0.48, 0.49, 0.06, 0.075, 0.003, {segs: 32}), mats.glowSoft);
     const L = [];
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2;
-      L.push(onAxis(new V3(0.345, Math.cos(a) * 0.32, Math.sin(a) * 0.32), new V3(1, 0, 0)));
+      L.push(onAxis(new V3(0.465, Math.cos(a) * 0.3, Math.sin(a) * 0.3), new V3(1, 0, 0)));
     }
     inst(c, new THREE.CylinderGeometry(0.014, 0.014, 0.02, 8), mats.steel, L, 'camera-bolts');
     smallParts += L.length;
@@ -359,6 +370,11 @@ export function buildOctopus(mats) {
   // count small parts in the tentacles too (bolts, pins, pads, slots per segment)
   const segs = tent.arms.reduce((n, a) => n + a.joints.length, 0);
   smallParts += segs * (6 + 2 + 2 + 6); // bolts, pins, pads, slots
+  // dimensions used by measure.js (screen-space comparison with the reference)
+  root.userData.dims = {bodyY: BODY_Y, glassR: 0.965, armorEdgeY: CY + 0.08, armorEdgeR: 1.075, camHousingR: 0.34, camLensR: 0.225,
+    camCentre: camDir.clone().multiplyScalar(1.3).add(new V3(0, BODY_Y, 0))};
+  anchors.reactor = reactor.getWorldPosition(new V3());
+  anchors.unit = topUnit.getWorldPosition(new V3()).add(new V3(0, 0.05, 0));
   root.userData.stats = {smallParts, segments: segs, perArm: tent.arms.map((a) => a.joints.length)};
 
   return {root, body, tentacles: tent, anchors};

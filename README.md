@@ -16,7 +16,7 @@ materials/<id>/index.html   各資料本体
 | # | 資料 | カテゴリ | レベル |
 |---|------|----------|--------|
 | 1 | [AIで「分解できる3D機械生物」を作る](materials/cutaway-3d/index.html) | AI活用 | 初級 |
-| 2 | [Glass-Dome Octopus — 参考画像1枚から作る3Dロボットタコ](materials/glass-dome-octopus/index.html)（STEP 2 プロトタイプ） | AI活用 | 初級 |
+| 2 | [Glass-Dome Octopus — 参考画像1枚から作る3Dロボットタコ](materials/glass-dome-octopus/index.html)（STEP 3 改善版・品質レポート付き） | AI活用 | 初級 |
 
 ## 使い方
 

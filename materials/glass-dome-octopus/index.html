@@ -71,7 +71,7 @@ body.no-ui header,body.no-ui .ui,body.no-ui .hint,body.no-ui #ref{display:none!i
 <header>
   <h1>Glass-Dome Octopus</h1>
   <p>ガラスドーム・オクトパス</p>
-  <small>STEP 2 プロトタイプ ― Three.js のコードだけで組み立てた 3D モデル</small>
+  <small>STEP 3 改善版 ― Three.js のコードだけで組み立てた 3D モデル</small>
 </header>
 
 <figure id="ref" hidden>
@@ -90,6 +90,7 @@ body.no-ui header,body.no-ui .ui,body.no-ui .hint,body.no-ui #ref{display:none!i
   <button data-view="side">側面</button>
   <button data-view="rear">背面</button>
   <button data-view="top">上</button>
+  <button data-view="oblique">斜め</button>
   <span class="sep"></span>
   <button id="refBtn" aria-pressed="false" title="参考画像と同じ構図で比較">🖼 参考構図</button>
   <button id="infoBtn" title="このモデルについて">ⓘ</button>
@@ -98,22 +99,24 @@ body.no-ui header,body.no-ui .ui,body.no-ui .hint,body.no-ui #ref{display:none!i
 <dialog id="info">
   <button id="infoClose" aria-label="閉じる">✕</button>
   <h2>このモデルについて</h2>
-  <p>参考画像 1 枚を数値で測り、チェックリストを書いてから Three.js のコードだけで組み立てた STEP 2 のプロトタイプです。画像を 3D 空間に貼り付けてはいません。</p>
+  <p>参考画像 1 枚を数値で測り、チェックリストを書いてから Three.js のコードだけで組み立て、STEP 3 で参考との差を計測して 2 ラウンド改善したモデルです。画像を 3D 空間に貼り付けてはいません。</p>
   <h3>構成</h3>
   <ul>
-    <li>透明ガラスドーム＋発光コア、ギア 6・ピストン 8・ホース・上部ユニット</li>
+    <li>透明ガラス（球の上 61%）＋発光コア、ギア 30・ピストン 8・ホース・上部ユニット</li>
     <li>白い装甲パネル 3 段（隙間と窓から暗い機構）、側面フレア板</li>
     <li>前方カメラ・副レンズ・後方ジェットノズル</li>
     <li>触手 8 本：各 <span id="segInfo">12〜14</span> 節の関節階層（Object3D の親子）＋ InstancedMesh</li>
   </ul>
-  <h3>品質評価（ラウンド 2 時点）</h3>
+  <h3>品質評価（STEP 3・ラウンド 2）重み付き 79.0 点</h3>
+  <p style="font-size:11px;color:var(--muted);margin:0 0 4px">内部の品質管理指標で、画像類似度ではありません。目標 85 点には未達です。</p>
   <table id="grade"></table>
   <h3>ドキュメント</h3>
   <ul>
     <li><a href="CHECKLIST.md" target="_blank" rel="noopener">CHECKLIST.md</a>（計測値と 12 項目）</li>
     <li><a href="JOB_DESCRIPTION.md" target="_blank" rel="noopener">JOB_DESCRIPTION.md</a>（共通ルール＋修正ログ）</li>
     <li><a href="README.md" target="_blank" rel="noopener">README.md</a>（評価・テスト結果・使い方）</li>
-    <li><a href="screenshots/reference-comparison.png" target="_blank" rel="noopener">参考画像との比較</a></li>
+    <li><a href="QUALITY_REPORT.md" target="_blank" rel="noopener">QUALITY_REPORT.md</a>（実測値・改善前後・未解決の問題）</li>
+    <li><a href="screenshots/comparison.png" target="_blank" rel="noopener">比較画像</a>（参考｜改善前｜R1｜R2）</li>
   </ul>
   <p style="color:var(--muted);font-size:11px">参考技術：<a href="https://github.com/Nyxera0x/cutaway" target="_blank" rel="noopener">Nyxera0x/cutaway</a>（MIT）</p>
 </dialog>
@@ -122,20 +125,20 @@ body.no-ui header,body.no-ui .ui,body.no-ui .hint,body.no-ui #ref{display:none!i
 <div id="err" hidden role="alert"></div>
 
 <script>
-  // STEP 2 grading after round 2 (graded against the reference picture; details in README.md)
+  // STEP 3 grading after round 2 (internal QA index, not an image-similarity measure; details in QUALITY_REPORT.md)
   window.GRADE = [
-    [1, '触手が正確に 8 本', 'YES'],
-    [2, '触手の長さ・太さ（付け根は一致、中間〜先端が参考より細い）', 'PARTIAL'],
-    [3, '多関節構造（1 本 12〜14 節・回転リング・軸ピン）', 'YES'],
-    [4, 'ドームが透明で内部が見える', 'YES'],
-    [5, 'AI コアが適切な位置で発光', 'YES'],
-    [6, '白い装甲のパネル分割（参考より継ぎ目・切り欠きが少ない）', 'PARTIAL'],
-    [7, 'カメラの形状・位置（参考はカウルがより前に突き出す）', 'PARTIAL'],
-    [8, '金属・ガラス・装甲の質感の区別', 'YES'],
-    [9, '暗い内部機構（暗部 0.322 / 参考 0.285）', 'YES'],
-    [10, '8 本の立体配置（2 本は高く、6 本は床で巻く）', 'YES'],
-    [11, '参考に近い構図（参考構図ボタン）', 'YES'],
-    [12, 'スマートフォン操作（エミュレーションで確認・実機未確認）', 'YES'],
+    [1, '全体プロポーション 15%', 'PARTIAL 74'],
+    [2, '8本の触手の形状・配置 15%', 'YES 88'],
+    [3, '触手の関節・機械構造 10%', 'YES 85'],
+    [4, 'ガラスドームの透明感 10%', 'YES 90'],
+    [5, 'AIコアと内部構造 10%', 'PARTIAL 82'],
+    [6, '白い装甲の形状・分割 10%', 'PARTIAL 61'],
+    [7, '前方カメラ 5%', 'PARTIAL 83'],
+    [8, '金属・ガラス・装甲の質感 5%', 'PARTIAL 78'],
+    [9, '緑色発光 5%', 'PARTIAL 72'],
+    [10, '機械部品の密度・精密感 5%', 'PARTIAL 67'],
+    [11, '照明・影・構図 5%', 'PARTIAL 73'],
+    [12, '360度表示の破綻 5%', 'YES 85'],
   ];
 </script>
 <script type="module" src="src/main.js"></script>

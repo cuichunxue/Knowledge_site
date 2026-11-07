@@ -1,0 +1,122 @@
+{
+ "ratios": {
+  "body / total width": {
+   "ref": 0.354,
+   "render": 0.328,
+   "diff_pct": -7.3
+  },
+  "dome height / body": {
+   "ref": 0.611,
+   "render": 0.582,
+   "diff_pct": -4.7
+  },
+  "tentacle length / body (upper-right raised)": {
+   "ref": 1.491,
+   "render": 1.714,
+   "diff_pct": 14.9
+  },
+  "tentacle length / body (left side)": {
+   "ref": 1.207,
+   "render": 1.714,
+   "diff_pct": 42.0
+  },
+  "tentacle length / body (front)": {
+   "ref": 0.878,
+   "render": 1.207,
+   "diff_pct": 37.5
+  },
+  "tentacle root / body": {
+   "ref": 0.227,
+   "render": 0.252,
+   "diff_pct": 11.1
+  },
+  "camera housing / body": {
+   "ref": 0.355,
+   "render": 0.386,
+   "diff_pct": 8.7
+  },
+  "camera lens / body": {
+   "ref": 0.233,
+   "render": 0.255,
+   "diff_pct": 9.6
+  },
+  "tip curl / body": {
+   "ref": 0.241,
+   "render": 0.232,
+   "diff_pct": -3.9
+  },
+  "total height / total width": {
+   "ref": 0.638,
+   "render": 0.591,
+   "diff_pct": -7.4
+  }
+ },
+ "colour": {
+  "dark_density": {
+   "ref": 0.282,
+   "render": 0.307,
+   "render_over_ref": 1.09
+  },
+  "dark_structure": {
+   "ref": 0.206,
+   "render": 0.175,
+   "render_over_ref": 0.85
+  },
+  "white": {
+   "ref": 0.32,
+   "render": 0.44,
+   "render_over_ref": 1.38
+  },
+  "green": {
+   "ref": 0.092,
+   "render": 0.064,
+   "render_over_ref": 0.7
+  }
+ },
+ "shape_px": {
+  "bodyPx": 338.3,
+  "totalW": 1032,
+  "totalH": 610,
+  "domeHPx": 197,
+  "rootPx": 85.4,
+  "cameraHousingPx": 130.6,
+  "cameraLensPx": 86.4,
+  "curlPx": 78.5,
+  "lenB": 579.9,
+  "lenC": 579.9,
+  "lenF": 408.2
+ },
+ "segments": {
+  "T1": 15,
+  "T2": 14,
+  "T3": 14,
+  "T7": 14,
+  "T4": 14,
+  "T8": 13,
+  "T5": 13,
+  "T6": 14
+ },
+ "stats": {
+  "fps": 0,
+  "fpsLog": [],
+  "tier": "high",
+  "transmission": true,
+  "pixelRatio": 1,
+  "calls": 467,
+  "triangles": 1511172,
+  "geometries": 167,
+  "textures": 9,
+  "smallParts": 1997,
+  "segments": 111,
+  "perArm": [
+   15,
+   14,
+   14,
+   14,
+   14,
+   13,
+   13,
+   14
+  ]
+ }
+}
