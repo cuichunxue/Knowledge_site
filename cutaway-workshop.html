@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>勉強会資料：AIで「分解できる3D機械生物」を作る</title>
+<style>
+  :root{
+    --bg:#f6f8f7; --card:#fff; --ink:#1c2420; --sub:#5a6860; --line:#dfe6e2;
+    --green:#1f9d63; --green-d:#14744a; --green-l:#e3f5ec;
+    --warn:#c2410c; --warn-l:#fff1e6; --code:#16201b; --code-ink:#d7f5e5;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
+    line-height:1.85;font-size:16px}
+  header.hero{background:linear-gradient(135deg,#0f3d2a,#1f9d63);color:#fff;padding:56px 20px 48px;text-align:center}
+  .hero h1{margin:0 0 12px;font-size:clamp(24px,5vw,38px);line-height:1.4}
+  .hero p{margin:0 auto;max-width:640px;opacity:.92}
+  .tag{display:inline-block;background:rgba(255,255,255,.18);border-radius:99px;padding:2px 14px;font-size:13px;margin-bottom:14px}
+  nav{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  nav ul{list-style:none;margin:0;padding:8px 16px;display:flex;gap:6px;overflow-x:auto;max-width:960px;margin-inline:auto}
+  nav a{white-space:nowrap;text-decoration:none;color:var(--sub);font-size:13px;padding:4px 12px;border-radius:99px;border:1px solid var(--line)}
+  nav a:hover{background:var(--green-l);color:var(--green-d)}
+  main{max-width:860px;margin:0 auto;padding:24px 16px 80px}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 24px;margin:24px 0}
+  h2{margin:0 0 16px;font-size:24px;display:flex;align-items:center;gap:10px;line-height:1.4}
+  h2 .num{flex:none;background:var(--green);color:#fff;border-radius:10px;min-width:36px;height:36px;display:grid;place-items:center;font-size:16px;padding:0 8px}
+  h3{margin:24px 0 8px;font-size:18px;color:var(--green-d)}
+  ul,ol{padding-left:1.4em}
+  li{margin:4px 0}
+  code{background:#eef3f0;padding:1px 6px;border-radius:5px;font-size:.9em}
+  pre{background:var(--code);color:var(--code-ink);padding:16px;border-radius:12px;overflow-x:auto;font-size:13.5px;line-height:1.6;position:relative;white-space:pre-wrap;word-break:break-word}
+  pre code{background:none;padding:0;color:inherit}
+  .copy{position:absolute;top:8px;right:8px;background:#2c3a33;color:#fff;border:0;border-radius:6px;font-size:12px;padding:4px 10px;cursor:pointer}
+  .copy:hover{background:var(--green)}
+  .box{border-radius:12px;padding:14px 16px;margin:16px 0;border-left:5px solid}
+  .box.tip{background:var(--green-l);border-color:var(--green)}
+  .box.warn{background:var(--warn-l);border-color:var(--warn)}
+  .box.term{background:#eef2ff;border-color:#4f46e5}
+  .box b.t{display:block;margin-bottom:2px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:16px 0}
+  .item{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fbfdfc}
+  .item .n{color:var(--green);font-weight:700;font-size:13px}
+  .item h4{margin:2px 0 4px;font-size:16px}
+  .item p{margin:0;font-size:14px;color:var(--sub);line-height:1.6}
+  table{border-collapse:collapse;width:100%;font-size:14.5px;margin:12px 0;display:block;overflow-x:auto}
+  th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+  th{background:var(--green-l)}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0}
+  .flow span{background:var(--green-l);border:1px solid #b8e3cc;border-radius:10px;padding:6px 12px;font-size:14px}
+  .flow i{color:var(--sub);font-style:normal}
+  .quiz details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:10px 0;background:#fbfdfc}
+  .quiz summary{cursor:pointer;font-weight:600}
+  .quiz details[open]{background:var(--green-l)}
+  .check label{display:block;padding:6px 0;cursor:pointer}
+  .check input{margin-right:8px;transform:scale(1.2)}
+  .bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0}
+  .bar div{height:100%;width:0;background:var(--green);transition:width .3s}
+  footer{text-align:center;color:var(--sub);font-size:13px;padding:0 16px 48px}
+  @media(max-width:520px){section{padding:20px 16px}h2{font-size:20px}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="tag">初心者向け勉強会</div>
+  <h1>AIで「分解できる3D機械生物」を作る<br>— ジョブディスクリプション方式 —</h1>
+  <p>ChatGPTで作った1枚の画像から、Claude Codeを使って、Three.jsで部品ごとにバラバラになる精密な3Dモデルと動画を作る。その考え方と全手順を学びます。</p>
+</header>
+
+<nav><ul>
+  <li><a href="#intro">はじめに</a></li>
+  <li><a href="#terms">用語</a></li>
+  <li><a href="#env">準備</a></li>
+  <li><a href="#flow">全体像</a></li>
+  <li><a href="#s1">Step1</a></li>
+  <li><a href="#s2">Step2</a></li>
+  <li><a href="#s3">Step3</a></li>
+  <li><a href="#s4">Step4</a></li>
+  <li><a href="#s5">Step5</a></li>
+  <li><a href="#s6">Step6-8</a></li>
+  <li><a href="#skill">スキル</a></li>
+  <li><a href="#quiz">確認</a></li>
+</ul></nav>
+
+<main>
+
+<section id="intro">
+  <h2><span class="num">0</span>はじめに：何を学ぶの？</h2>
+  <p>この手法の元ネタは @Nyxera0x 氏の投稿とGitHubリポジトリ <code>Nyxera0x/cutaway</code> です。ここでは初心者でも再現できるよう整理しました。</p>
+  <p>ゴールは次のような成果物を作ること。</p>
+  <ul>
+    <li>ロボットのサメなどの<b>精密な機械生物の3D静止画</b></li>
+    <li>部品ごとにボタンで分解できる<b>インタラクティブなWebページ</b></li>
+    <li>分解→爆発→再組み立てを見せる<b>約21秒の動画</b>と、SNS用の<b>10秒版</b></li>
+  </ul>
+  <div class="box tip"><b class="t">この手法の核心</b>
+    AIに「いい感じに作って」と<b>プロンプト</b>を投げるのではなく、<b>ジョブディスクリプション（仕事の説明書）</b>と<b>画像専用チェックリスト</b>を渡して、新人に仕事を任せるように指示する。
+  </div>
+  <h3>学べること</h3>
+  <ol>
+    <li>AIに安定して高品質な成果を出させる「指示の設計」</li>
+    <li>失敗を<b>数値で</b>記録して次に活かす仕組み</li>
+    <li>人間の承認ポイントを入れた制作フロー</li>
+  </ol>
+</section>
+
+<section id="terms">
+  <h2><span class="num">📖</span>まず用語を知ろう</h2>
+  <table>
+    <tr><th>用語</th><th>かんたんな説明</th></tr>
+    <tr><td>Claude Code</td><td>ターミナルで動くAIコーディングアシスタント。ファイルを作ったりコードを実行したりできる。</td></tr>
+    <tr><td>Three.js</td><td>ブラウザで3Dを表示するJavaScriptライブラリ。画像やモデルファイルを使わず<b>コードだけ</b>で形を作れる。</td></tr>
+    <tr><td>ジョブディスクリプション</td><td>全ての制作で共通して守らせるルール集（<code>JOB_DESCRIPTION.md</code>）。</td></tr>
+    <tr><td>チェックリスト</td><td>その画像<b>専用</b>の合格条件。10〜12項目の番号付きリスト。</td></tr>
+    <tr><td>Still（静止画）</td><td>参考画像と同じポーズで描画した1枚絵。動画の前に必ず承認を取る。</td></tr>
+    <tr><td>Film（動画）</td><td>部品が分解していく映像。静止画承認後に作る。</td></tr>
+    <tr><td>luma（輝度）</td><td>ピクセルの明るさ。0が黒、255が白。暗部の量を測るのに使う。</td></tr>
+    <tr><td>LUFS</td><td>音量の単位。動画配信では −14 LUFS が目安。</td></tr>
+  </table>
+  <div class="box term"><b class="t">Markdown（.md）とは？</b>
+    見出しや箇条書きを簡単な記号で書けるテキスト形式。AIに読ませる指示書によく使われます。
+  </div>
+</section>
+
+<section id="env">
+  <h2><span class="num">🛠</span>必要な環境</h2>
+  <table>
+    <tr><th>ツール</th><th>用途</th></tr>
+    <tr><td>Claude Code（Opus推奨）</td><td>コード生成・評価の本体</td></tr>
+    <tr><td>ChatGPT</td><td>参考画像の生成</td></tr>
+    <tr><td>Node.js 20以上</td><td>Three.jsの実行・ビルド</td></tr>
+    <tr><td>ffmpeg</td><td>連番画像から動画・音声の合成</td></tr>
+    <tr><td>Python 3</td><td>画像の数値測定など</td></tr>
+  </table>
+  <p>バージョン確認コマンド：</p>
+  <pre><code>node -v      # v20 以上ならOK
+ffmpeg -version
+python3 --version</code></pre>
+</section>
+
+<section id="flow">
+  <h2><span class="num">🗺</span>全体の流れ：6つの成果物</h2>
+  <div class="flow">
+    <span>① 参考画像</span><i>→</i><span>② ジョブディスクリプション</span><i>→</i><span>③ チェックリスト</span><i>→</i><span>④ 静止画</span><i>→</i><span>⑤ インタラクティブページ</span><i>→</i><span>⑥ 分解動画</span>
+  </div>
+  <div class="grid">
+    <div class="item"><div class="n">①</div><h4>参考画像</h4><p>ChatGPTが生成する「目指す完成形」。</p></div>
+    <div class="item"><div class="n">②</div><h4>ジョブディスクリプション</h4><p>全ビルド共通のルール。失敗のたびに育てる。</p></div>
+    <div class="item"><div class="n">③</div><h4>チェックリスト</h4><p>その画像専用の10〜12項目の合格基準。</p></div>
+    <div class="item"><div class="n">④</div><h4>静止画</h4><p>参考画像と並べて評価。人間が承認。</p></div>
+    <div class="item"><div class="n">⑤</div><h4>インタラクティブページ</h4><p>部品ごとのボタンで分解。</p></div>
+    <div class="item"><div class="n">⑥</div><h4>分解動画</h4><p>約21秒の本編＋投稿用10秒版。</p></div>
+  </div>
+  <div class="box warn"><b class="t">最重要ルール</b>
+    <b>静止画を承認するまで、絶対に動画を作らない。</b> 土台が違ったまま動画を作ると、全部やり直しになるためです。
+  </div>
+</section>
+
+<section id="s1">
+  <h2><span class="num">1</span>参考画像を生成する</h2>
+  <p>ChatGPTに下のプロンプトを送ります。<code>[hammerhead shark]</code> の部分を好きな生き物・機械に差し替えます。</p>
+<pre><button class="copy">コピー</button><code>A robotic [hammerhead shark] as a precision machine, studio product shot on a near-white background with a soft floor shadow.
+White glossy shells with clearcoat, green only on tips, rims, edges and joint rings.
+Dense dark mechanism showing through cut-outs and clear glass: gears, pistons, hoses, small screws.
+Eyes as glossy black lenses with a thin green ring. Fins and membranes milky and frosted with thin veins.
+Front three-quarter view, the whole animal in frame.</code></pre>
+  <h3>題材選びのコツ</h3>
+  <table>
+    <tr><th>◎ おすすめ</th><th>✕ 避ける</th></tr>
+    <tr><td>関節が多い／内部に機械が密集している<br>（サメ、ピラニア、カニ、昆虫など）</td><td>表面がつるっとしたもの<br>（蛇、貝など）→ 分解しても見せ場がない</td></tr>
+    <tr><td>メインの肢は<b>1種類だけ</b>（足 or 羽 or 触手）</td><td>足も羽も触手もあるもの → 複雑すぎて失敗しやすい</td></tr>
+  </table>
+</section>
+
+<section id="s2">
+  <h2><span class="num">2</span>ジョブディスクリプションを用意する</h2>
+  <p>プロジェクトのフォルダに <code>JOB_DESCRIPTION.md</code> を置き、Claudeに<b>毎回読ませます</b>。</p>
+  <h3>主なルール</h3>
+  <ul>
+    <li>白いシェル ＋ クリアコート（つやのある透明コーティング）</li>
+    <li>緑は<b>アクセントだけ</b>（先端・縁・関節リング）</li>
+    <li>暗い機械構造を<b>2層</b>で見せる（大きなギア ＋ 約260個の小部品）</li>
+    <li>作る前に<b>比率を数値で測定</b>してから構築する</li>
+    <li><b>静止画を承認するまで動画は作らない</b></li>
+  </ul>
+  <p>サンプルのイメージ：</p>
+<pre><code># JOB_DESCRIPTION.md（例）
+## 役割
+あなたは Three.js で精密な機械生物を作る3Dアーティスト兼エンジニアです。
+
+## 見た目のルール
+- シェルは白、光沢はクリアコート
+- 緑は先端・縁・関節リングのみ
+- 暗い機械は2層（大ギア + 小部品およそ260個）
+
+## 進め方のルール
+- 構築前に参考画像の比率を数値で測る
+- 静止画が承認されるまで動画は作らない
+
+## 過去の失敗（追記していく）
+- （Step5で1行ずつ追加）</code></pre>
+  <div class="box tip"><b class="t">なぜ必要？</b>
+    AIは会話が変わると前回の注意点を忘れます。ファイルに書いて毎回読ませることで、「新人に引き継ぎ資料を渡す」のと同じ効果が出ます。
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="num">3</span>画像専用のチェックリストを書く</h2>
+  <p>コードを書く<b>前に</b>、10〜12項目の番号付きリストを作ります。</p>
+  <h3>書き方の3ルール</h3>
+  <ol>
+    <li><b>曖昧な言葉は数値にする</b><br>✕「肢が細い」 → ○「肢の太さは体長の0.15〜0.25」</li>
+    <li><b>ありがちな失敗には「NEVER」を書く</b><br>例：「NEVER 全身を同じ太さの円柱で作らない」</li>
+    <li><b>最後の項目は必ず「暗部密度が参考画像の0.8以上」</b></li>
+  </ol>
+<pre><code>1. 体高は体長の 0.18〜0.22 であること
+2. 頭部の長さは体長の 0.25〜0.30 であること
+3. 肢（ひれ）の太さは付け根の 0.15〜0.25 であること
+4. NEVER 緑を面で広く塗らない（先端・縁・リングのみ）
+...
+12. 暗部密度（luma &lt; 80 の割合）が参考画像の 0.8 以上</code></pre>
+  <p>※ ピラニアの実例がリポジトリで公開されています。まずはそれを読んで雰囲気をつかむのがおすすめです。</p>
+</section>
+
+<section id="s4">
+  <h2><span class="num">4</span>静止画ループ（Still Loop）</h2>
+  <p>Claudeに次の順で作業させます。</p>
+  <ol>
+    <li>参考画像と<b>同じポーズ</b>で <code>1600×900</code> の静止画をレンダリング</li>
+    <li>「参考画像」「自分の静止画」「承認済みの静止画」を<b>並べて比較</b></li>
+    <li>チェックリスト全項目を <b>yes / partial / no</b> で評価</li>
+    <li><b>no → partial</b> の順に修正</li>
+    <li><b>ラウンド2で必ず停止</b>し、人間の承認を待つ</li>
+  </ol>
+  <div class="flow"><span>描画</span><i>→</i><span>比較</span><i>→</i><span>採点</span><i>→</i><span>修正</span><i>→</i><span>人間が承認？</span></div>
+  <h3>「目視」ではなく「数値」で測る</h3>
+  <ul>
+    <li><b>暗部密度</b>：輝度 luma &lt; 80 のピクセルの割合</li>
+    <li><b>体高・頭長・顎/肢の長さ</b>：体長に対する比率</li>
+  </ul>
+<pre><code># 暗部密度を測る簡単な例（Python）
+from PIL import Image
+import numpy as np
+img = np.array(Image.open("still.png").convert("L"))
+print("暗部密度:", (img &lt; 80).mean())</code></pre>
+  <div class="box warn"><b class="t">なぜ数値？</b>
+    AIも人間も「なんとなく似てる」で妥協しがちです。数値なら、どこが足りないか誰でも分かります。
+  </div>
+</section>
+
+<section id="s5">
+  <h2><span class="num">5</span>修正をジョブディスクリプションに蓄積する</h2>
+  <p>失敗したら、<b>数値付きで1行</b>、<code>JOB_DESCRIPTION.md</code> に追記します。</p>
+  <table>
+    <tr><th>悪い例</th><th>良い例</th></tr>
+    <tr><td>頭が小さかった</td><td>頭長が体長比0.17で小さすぎた。0.25〜0.30にすること。</td></tr>
+    <tr><td>暗い部分が少ない</td><td>暗部密度が0.42で不足。参考画像の0.8倍（0.5以上）を確保すること。</td></tr>
+  </table>
+  <div class="box tip"><b class="t">効果</b>
+    作るたびにルールが賢くなり、<b>次のビルドから同じ失敗をしなくなる</b>。これがこの手法のいちばん大事な仕組みです。
+  </div>
+</section>
+
+<section id="s6">
+  <h2><span class="num">6–8</span>動画・投稿用・レンダリング</h2>
+  <h3>Step 6：動画（Film）を作る　※静止画承認後のみ</h3>
+  <ul>
+    <li>体型が近い<b>既存作品の振付を1:1で移植</b>し、体だけ差し替える</li>
+    <li>部品ごとに<b>カメラの位置・角度を変える</b>（同じ位置から撮らない）</li>
+    <li>約2〜3秒ごとに1部品が分解 → 最後に全体爆発 → 再組み立て → 退出</li>
+    <li>ページには<b>製品名＋部品ごとのボタン＋ライブカード</b>を配置</li>
+  </ul>
+  <h3>Step 7：投稿用10秒版</h3>
+  <ul>
+    <li>本編の切り抜きではなく、<b>完全に別のスクリプト</b>で作る</li>
+    <li>オープニング・エンディングも毎回変える</li>
+  </ul>
+  <h3>Step 8：レンダリング</h3>
+  <ul>
+    <li><b>フレーム単位</b>で正確に描画する（画面録画は使わない）</li>
+    <li>4K相当で撮って<b>1080pにダウンスケール</b>（きれいに見える）</li>
+    <li>音も<b>同じタイムライン</b>から生成し、<b>−14 LUFS</b>にマスタリング</li>
+  </ul>
+  <div class="box term"><b class="t">なぜ画面録画ではダメ？</b>
+    PCの処理が重いとコマ落ちするため。フレームを1枚ずつ書き出して後で動画にまとめれば、必ず滑らかになります。
+  </div>
+</section>
+
+<section id="skill">
+  <h2><span class="num">⚡</span>公式スキルで自動化する</h2>
+  <p>上記の流れは、公式スキルを入れるとほぼ自動化できます。</p>
+<pre><button class="copy">コピー</button><code>npx skills add Nyxera0x/cutaway -g -a claude-code</code></pre>
+  <p>インストール後、Claude Codeに参考画像を渡して次のように伝えるだけです。</p>
+<pre><code>この画像を分解可能な3Dにして</code></pre>
+  <div class="box warn"><b class="t">注意</b>
+    外部のスキルは、あなたのPC上でコードを実行する可能性があります。インストール前にリポジトリの中身を一度確認する習慣をつけましょう。
+  </div>
+</section>
+
+<section id="check">
+  <h2><span class="num">✅</span>実践チェックリスト</h2>
+  <div class="bar"><div id="bar"></div></div>
+  <p id="pct" style="margin:0;color:var(--sub);font-size:14px">進捗 0%</p>
+  <div class="check">
+    <label><input type="checkbox">Node.js / ffmpeg / Python3 を確認した</label>
+    <label><input type="checkbox">題材を決めて参考画像を生成した</label>
+    <label><input type="checkbox">JOB_DESCRIPTION.md を置いた</label>
+    <label><input type="checkbox">10〜12項目のチェックリストを数値付きで書いた</label>
+    <label><input type="checkbox">静止画を作り、yes/partial/no で採点した</label>
+    <label><input type="checkbox">ラウンド2で止めて、人間として承認した</label>
+    <label><input type="checkbox">失敗点を数値付きでJOB_DESCRIPTIONに追記した</label>
+    <label><input type="checkbox">動画（本編）と10秒版を別スクリプトで作った</label>
+  </div>
+</section>
+
+<section id="quiz" class="quiz">
+  <h2><span class="num">❓</span>理解度クイズ</h2>
+  <details><summary>Q1. この手法の核心は？</summary><p>プロンプトではなく、ジョブディスクリプションと画像専用チェックリストで指示すること。</p></details>
+  <details><summary>Q2. 動画を作り始めてよいのはいつ？</summary><p>静止画を人間が承認した後だけ。</p></details>
+  <details><summary>Q3. 「肢が細い」をチェックリストに書くときの直し方は？</summary><p>数値にする。例：肢の太さは0.15〜0.25（体長比など基準を明記）。</p></details>
+  <details><summary>Q4. チェックリストの最後の項目は何？</summary><p>暗部密度が参考画像の0.8以上。</p></details>
+  <details><summary>Q5. 画面録画を使わない理由は？</summary><p>コマ落ちを防ぐため。フレーム単位で正確にレンダリングする。</p></details>
+  <details><summary>Q6. 失敗を次に活かすには？</summary><p>数値付きで1行、JOB_DESCRIPTION.mdに追記する。</p></details>
+</section>
+
+</main>
+
+<footer>
+  参考：@Nyxera0x 氏の投稿 / <a href="https://github.com/Nyxera0x/cutaway" target="_blank" rel="noopener">github.com/Nyxera0x/cutaway</a>
+</footer>
+
+<script>
+  // コピーボタン
+  document.querySelectorAll('.copy').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var text=btn.parentElement.querySelector('code').innerText;
+      var done=function(){btn.textContent='コピーしました';setTimeout(function(){btn.textContent='コピー'},1500)};
+      if(navigator.clipboard){navigator.clipboard.writeText(text).then(done)}
+    });
+  });
+  // 進捗バー
+  var boxes=document.querySelectorAll('.check input');
+  function update(){
+    var n=0;boxes.forEach(function(b){if(b.checked)n++});
+    var p=Math.round(n/boxes.length*100);
+    document.getElementById('bar').style.width=p+'%';
+    document.getElementById('pct').textContent='進捗 '+p+'%';
+  }
+  boxes.forEach(function(b){b.addEventListener('change',update)});
+</script>
+</body>
+</html>
