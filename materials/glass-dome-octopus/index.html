@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Glass-Dome Octopus | 3D プロトタイプ</title>
+<meta name="description" content="参考画像1枚から Three.js のコードだけで組み立てた、ガラスドームを持つロボットタコの 3D モデル（STEP 2 プロトタイプ）。">
+<style>
+:root{--ink:#1d2622;--muted:#5d6b64;--line:rgba(30,45,38,.14);--panel:rgba(255,255,255,.82);--green:#12b06c;--green-d:#0c7d4c;color-scheme:light}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden;background:#eef0ef;color:var(--ink);
+  font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+/* soft vignette over the flat studio colour */
+/* only darkens the far edges; never lightens the model */
+.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(130% 100% at 50% 42%,rgba(40,60,50,0) 62%,rgba(40,60,50,.07) 100%)}
+header{position:fixed;left:max(16px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top));pointer-events:none}
+header h1{margin:0;font:800 clamp(20px,3.4vw,34px)/1.05 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.01em}
+header p{margin:4px 0 0;font-size:clamp(12px,1.6vw,15px);font-weight:700}
+header small{display:block;margin-top:2px;font-size:12px;color:var(--muted)}
+.ui{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:4px;padding:4px;
+  background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:999px;box-shadow:0 6px 20px rgba(20,40,30,.1);max-width:calc(100vw - 24px);overflow-x:auto;scrollbar-width:none}
+.ui::-webkit-scrollbar{display:none}
+.ui button{border:0;background:transparent;border-radius:999px;padding:6px 11px;font:700 12px/1.2 inherit;color:var(--ink);cursor:pointer;white-space:nowrap}
+.ui button:hover{background:rgba(18,176,108,.1)}
+.ui button[aria-pressed="true"]{background:var(--green);color:#fff}
+.ui .sep{width:1px;background:var(--line);margin:4px 2px;flex:none}
+#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;transition:opacity .25s;will-change:transform}
+.lbl i{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(18,176,108,.25)}
+.lbl span{position:absolute;left:10px;top:-38px;white-space:nowrap;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:8px;padding:3px 9px;
+  font-size:12px;font-weight:800;line-height:1.3;box-shadow:0 3px 10px rgba(20,40,30,.08)}
+.lbl span::before{content:"";position:absolute;left:-7px;bottom:-12px;width:14px;height:1px;background:var(--green);transform:rotate(-55deg);transform-origin:right}
+.lbl small{display:block;font-size:10px;font-weight:600;color:var(--muted)}
+.lbl.flip span{left:auto;right:10px}
+.lbl.flip span::before{left:auto;right:-7px;transform:rotate(55deg);transform-origin:left}
+#ref{position:fixed;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));width:min(300px,40vw);border-radius:10px;overflow:hidden;
+  border:1px solid var(--line);box-shadow:0 8px 24px rgba(20,40,30,.18);cursor:zoom-in;background:#fff;transition:width .2s}
+#ref.big{width:min(900px,calc(100vw - 24px));cursor:zoom-out}
+#ref img{display:block;width:100%}
+#ref figcaption{font-size:11px;padding:4px 8px;color:var(--muted)}
+#fps{position:fixed;right:10px;bottom:62px;font:11px ui-monospace,monospace;background:rgba(0,0,0,.6);color:#fff;padding:3px 8px;border-radius:6px}
+#err{position:fixed;inset:auto 16px 50% 16px;transform:translateY(50%);background:#fff;border:2px solid #d33;padding:16px;border-radius:12px;font-weight:700;text-align:center}
+dialog#info{position:fixed;margin:0;left:max(12px,env(safe-area-inset-left));top:auto;bottom:70px;width:min(420px,calc(100vw - 24px));max-height:calc(100vh - 160px);overflow:auto;
+  border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);padding:16px 18px;box-shadow:0 10px 30px rgba(20,40,30,.18);font-size:13px;line-height:1.7;color:var(--ink)}
+#info h2{font-size:16px;margin:0 0 6px}
+#info h3{font-size:13px;margin:12px 0 4px;color:var(--green-d)}
+#info table{border-collapse:collapse;width:100%;font-size:12px}
+#info td{border-top:1px solid var(--line);padding:3px 4px;vertical-align:top}
+#info td:last-child{white-space:nowrap;font-weight:800}
+#info .Y{color:#0c7d4c}#info .P{color:#b07a00}#info .N{color:#c0392b}
+#info ul{padding-left:1.2em;margin:4px 0}
+#info a{color:var(--green-d)}
+#infoClose{position:absolute;right:10px;top:8px;border:0;background:none;font-size:18px;cursor:pointer;color:var(--muted)}
+.hint{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);font-size:11px;color:var(--muted);pointer-events:none;white-space:nowrap;transition:opacity .6s}
+body.ready .hint{animation:fade 1s 5s forwards}
+@keyframes fade{to{opacity:0}}
+body.no-ui header,body.no-ui .ui,body.no-ui .hint,body.no-ui #ref{display:none!important}
+@media (max-width:600px){.ui{flex-wrap:wrap;justify-content:center;border-radius:18px;width:calc(100vw - 24px)}.ui .sep{display:none}.hint{bottom:104px}.ui button{padding:6px 8px}.lbl span{font-size:11px;top:-34px}.lbl small{display:none}}
+</style>
+<script type="importmap">
+{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}
+</script>
+</head>
+<body>
+<canvas id="c" tabindex="0" aria-label="Glass-Dome Octopus の 3D モデル。ドラッグで回転、ピンチ・ホイールでズーム、ダブルクリックで視点リセット"></canvas>
+<div class="vignette"></div>
+<div id="labels"></div>
+
+<header>
+  <h1>Glass-Dome Octopus</h1>
+  <p>ガラスドーム・オクトパス</p>
+  <small>STEP 2 プロトタイプ ― Three.js のコードだけで組み立てた 3D モデル</small>
+</header>
+
+<figure id="ref" hidden>
+  <img src="assets/reference.png" alt="参考画像：Glass-Dome Octopus のインフォグラフィック">
+  <figcaption>参考画像（クリックで拡大）― 3D はこの中央のタコを基準に再構築</figcaption>
+</figure>
+
+<p class="hint">ドラッグで回転 ・ ピンチ／ホイールでズーム ・ ダブルタップで戻る</p>
+
+<nav class="ui" aria-label="表示操作">
+  <button id="resetBtn" title="視点リセット (R)">⟲ リセット</button>
+  <button id="autoBtn" aria-pressed="true" title="自動回転 (Space)">⟳ 自動回転</button>
+  <button id="lblBtn" aria-pressed="true" title="部品名 (L)">🏷 部品名</button>
+  <span class="sep"></span>
+  <button data-view="front">正面</button>
+  <button data-view="side">側面</button>
+  <button data-view="rear">背面</button>
+  <button data-view="top">上</button>
+  <span class="sep"></span>
+  <button id="refBtn" aria-pressed="false" title="参考画像と同じ構図で比較">🖼 参考構図</button>
+  <button id="infoBtn" title="このモデルについて">ⓘ</button>
+</nav>
+
+<dialog id="info">
+  <button id="infoClose" aria-label="閉じる">✕</button>
+  <h2>このモデルについて</h2>
+  <p>参考画像 1 枚を数値で測り、チェックリストを書いてから Three.js のコードだけで組み立てた STEP 2 のプロトタイプです。画像を 3D 空間に貼り付けてはいません。</p>
+  <h3>構成</h3>
+  <ul>
+    <li>透明ガラスドーム＋発光コア、ギア 6・ピストン 8・ホース・上部ユニット</li>
+    <li>白い装甲パネル 3 段（隙間と窓から暗い機構）、側面フレア板</li>
+    <li>前方カメラ・副レンズ・後方ジェットノズル</li>
+    <li>触手 8 本：各 <span id="segInfo">12〜14</span> 節の関節階層（Object3D の親子）＋ InstancedMesh</li>
+  </ul>
+  <h3>品質評価（ラウンド 2 時点）</h3>
+  <table id="grade"></table>
+  <h3>ドキュメント</h3>
+  <ul>
+    <li><a href="CHECKLIST.md" target="_blank" rel="noopener">CHECKLIST.md</a>（計測値と 12 項目）</li>
+    <li><a href="JOB_DESCRIPTION.md" target="_blank" rel="noopener">JOB_DESCRIPTION.md</a>（共通ルール＋修正ログ）</li>
+    <li><a href="README.md" target="_blank" rel="noopener">README.md</a>（評価・テスト結果・使い方）</li>
+    <li><a href="screenshots/reference-comparison.png" target="_blank" rel="noopener">参考画像との比較</a></li>
+  </ul>
+  <p style="color:var(--muted);font-size:11px">参考技術：<a href="https://github.com/Nyxera0x/cutaway" target="_blank" rel="noopener">Nyxera0x/cutaway</a>（MIT）</p>
+</dialog>
+
+<div id="fps" hidden></div>
+<div id="err" hidden role="alert"></div>
+
+<script>
+  // STEP 2 grading after round 2 (graded against the reference picture; details in README.md)
+  window.GRADE = [
+    [1, '触手が正確に 8 本', 'YES'],
+    [2, '触手の長さ・太さ（付け根は一致、中間〜先端が参考より細い）', 'PARTIAL'],
+    [3, '多関節構造（1 本 12〜14 節・回転リング・軸ピン）', 'YES'],
+    [4, 'ドームが透明で内部が見える', 'YES'],
+    [5, 'AI コアが適切な位置で発光', 'YES'],
+    [6, '白い装甲のパネル分割（参考より継ぎ目・切り欠きが少ない）', 'PARTIAL'],
+    [7, 'カメラの形状・位置（参考はカウルがより前に突き出す）', 'PARTIAL'],
+    [8, '金属・ガラス・装甲の質感の区別', 'YES'],
+    [9, '暗い内部機構（暗部 0.322 / 参考 0.285）', 'YES'],
+    [10, '8 本の立体配置（2 本は高く、6 本は床で巻く）', 'YES'],
+    [11, '参考に近い構図（参考構図ボタン）', 'YES'],
+    [12, 'スマートフォン操作（エミュレーションで確認・実機未確認）', 'YES'],
+  ];
+</script>
+<script type="module" src="src/main.js"></script>
+<script type="module">
+  const t = document.getElementById('grade');
+  t.innerHTML = (window.GRADE || []).map(([n, txt, g]) => `<tr><td>${n}</td><td>${txt}</td><td class="${g[0]}">${g}</td></tr>`).join('');
+</script>
+<script nomodule>document.getElementById('err').hidden=false;document.getElementById('err').textContent='このブラウザは対応していません（最新の Chrome / Safari / Edge / Firefox で開いてください）。';</script>
+</body>
+</html>

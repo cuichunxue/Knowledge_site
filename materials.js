@@ -26,7 +26,7 @@
  *   tags        キーワード（検索対象）
  *   date        公開日 YYYY-MM-DD（30日以内は NEW 表示）
  */
-window.MATERIALS_VERSION = "1";
+window.MATERIALS_VERSION = "2";
 
 /* 管理画面のパスワード（SHA-256 ハッシュ。パスワードそのものは書かない）
  * Mini Game Arcade と同じパスワードで入れます。
@@ -34,6 +34,20 @@ window.MATERIALS_VERSION = "1";
 window.ADMIN_PASSWORD_HASH = "c7793f384cf22b066d54f9b21c81c3cb8ef8c240488cfd3654c551c5dc2c0534";
 
 window.MATERIALS = [
+  {
+    id: "glass-dome-octopus",
+    title: "Glass-Dome Octopus — 参考画像1枚から作る3Dロボットタコ",
+    description: "ChatGPT の参考画像から Three.js のコードだけで組み立てたロボットタコ。360°回転・ズーム・部品名表示。計測→チェックリスト→2ラウンドの比較修正という STEP 2 の実践例。",
+    path: "materials/glass-dome-octopus/index.html",
+    emoji: "🐙",
+    color: "#0f5c3c",
+    accent: "#2bff9c",
+    category: "AI活用",
+    level: "初級",
+    duration: "15分",
+    tags: ["Three.js", "WebGL", "3D", "Claude Code", "cutaway", "実践例"],
+    date: "2026-11-07"
+  },
   {
     id: "cutaway-3d",
     title: "AIで「分解できる3D機械生物」を作る",
