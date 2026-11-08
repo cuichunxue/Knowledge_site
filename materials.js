@@ -26,7 +26,7 @@
  *   tags        キーワード（検索対象）
  *   date        公開日 YYYY-MM-DD（30日以内は NEW 表示）
  */
-window.MATERIALS_VERSION = "3";
+window.MATERIALS_VERSION = "4";
 
 /* 管理画面のパスワード（SHA-256 ハッシュ。パスワードそのものは書かない）
  * Mini Game Arcade と同じパスワードで入れます。
@@ -36,8 +36,8 @@ window.ADMIN_PASSWORD_HASH = "c7793f384cf22b066d54f9b21c81c3cb8ef8c240488cfd3654
 window.MATERIALS = [
   {
     id: "glass-dome-octopus",
-    title: "Glass-Dome Octopus — 参考画像1枚から作る3Dロボットタコ",
-    description: "ChatGPT の参考画像から Three.js のコードだけで組み立てたロボットタコ。360°回転・ズーム・部品名表示。STEP 3 で参考との差を計測し、2ラウンド改善（品質スコア 70→79）。",
+    title: "Glass-Dome Octopus — 分解できる3Dロボットタコ",
+    description: "参考画像1枚から Three.js のコードだけで組み立てたロボットタコ。部品をタップして分解、全体分解・再組み立て・スライダーで内部を観察できます（STEP 2〜4 の実践例）。",
     path: "materials/glass-dome-octopus/index.html",
     emoji: "🐙",
     color: "#0f5c3c",
@@ -45,7 +45,7 @@ window.MATERIALS = [
     category: "AI活用",
     level: "初級",
     duration: "15分",
-    tags: ["Three.js", "WebGL", "3D", "Claude Code", "cutaway", "実践例", "品質評価"],
+    tags: ["Three.js", "WebGL", "3D", "Claude Code", "cutaway", "実践例", "品質評価", "分解アニメーション"],
     date: "2026-11-07"
   },
   {

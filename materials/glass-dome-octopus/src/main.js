@@ -431,6 +431,10 @@ window.__octo = {
   progress: () => explosion.progress(anim.state),
   restError: () => explosion.restError(),
   partAt: (x, y) => interaction.partAt(x, y),
+  showCardFor: (id) => {
+    ui.setSelected(id);
+    ui.showCard(partOf(id), lastE[id]);
+  },
   /** jump straight to a state (screenshots): {p, open: [ids], view: part id | 'overview' | view name} */
   pose: ({p = 0, open = [], view = null, select: sel = null} = {}) => {
     anim.snapHome();
