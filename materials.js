@@ -26,7 +26,7 @@
  *   tags        キーワード（検索対象）
  *   date        公開日 YYYY-MM-DD（30日以内は NEW 表示）
  */
-window.MATERIALS_VERSION = "4";
+window.MATERIALS_VERSION = "5";
 
 /* 管理画面のパスワード（SHA-256 ハッシュ。パスワードそのものは書かない）
  * Mini Game Arcade と同じパスワードで入れます。
@@ -34,6 +34,20 @@ window.MATERIALS_VERSION = "4";
 window.ADMIN_PASSWORD_HASH = "c7793f384cf22b066d54f9b21c81c3cb8ef8c240488cfd3654c551c5dc2c0534";
 
 window.MATERIALS = [
+  {
+    id: "octopus-guidebook",
+    title: "再現ガイドブック：参考画像1枚から分解できる3Dロボットを作る",
+    description: "Glass-Dome Octopus の制作（STEP 1〜4）を別の題材でも再現できるようにまとめた手引き。プロンプトの要点、計測と採点、分解の設計の型、テストの落とし穴と対策。",
+    path: "materials/octopus-guidebook/index.html",
+    emoji: "📗",
+    color: "#0d3a27",
+    accent: "#9ff5c9",
+    category: "AI活用",
+    level: "中級",
+    duration: "45分",
+    tags: ["Claude Code", "Three.js", "3D", "手順書", "ガイドブック", "cutaway", "テスト"],
+    date: "2026-11-08"
+  },
   {
     id: "glass-dome-octopus",
     title: "Glass-Dome Octopus — 分解できる3Dロボットタコ",
