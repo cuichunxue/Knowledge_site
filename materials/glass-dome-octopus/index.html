@@ -106,6 +106,16 @@ dialog#info{position:fixed;margin:0;left:50%;top:50%;transform:translate(-50%,-5
 kbd{font:11px ui-monospace,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px;background:#fff}
 body.no-ui header,body.no-ui #tools,body.no-ui #parts,body.no-ui #partsToggle,body.no-ui #card,body.no-ui #dock,body.no-ui #hotspots,body.no-ui #hint,body.no-ui #ref,body.no-ui #morePanel{display:none!important}
 
+/* STEP 5 film captions (only in ?film) */
+.film-cap{position:fixed;left:4.5%;bottom:7%;z-index:9;pointer-events:none;font-family:"IPAGothic","Hiragino Sans","Noto Sans JP",sans-serif;color:var(--ink);white-space:nowrap;background:rgba(255,255,255,.78);backdrop-filter:blur(6px);border-radius:14px;padding:14px 22px 16px}
+.film-cap b{display:block;font:800 clamp(30px,3.6vw,62px)/1.1 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.01em}
+.film-cap span{display:block;margin-top:8px;font-size:clamp(16px,1.6vw,26px);font-weight:700;color:var(--green-d)}
+.film-cap.cap-part b{font-size:clamp(24px,2.6vw,44px)}
+.film-cap.cap-part{border-left:6px solid var(--green)}
+.film-cap.cap-hero,.film-cap.cap-end{left:50%;bottom:auto;top:7%;text-align:center;translate:-50% 0;background:none;backdrop-filter:none;padding:0}
+.film-cap.cap-end span{color:var(--muted)}
+body.film .vignette{display:block}
+
 /* phones: the 3D first, the menu folds into a sheet */
 @media (max-width:760px){
   header small{display:none}
@@ -201,6 +211,7 @@ body.no-ui header,body.no-ui #tools,body.no-ui #parts,body.no-ui #partsToggle,bo
   <p style="color:var(--muted);font-size:11px">参考技術：<a href="https://github.com/Nyxera0x/cutaway" target="_blank" rel="noopener">Nyxera0x/cutaway</a>（MIT）</p>
 </dialog>
 
+<div id="filmCap" class="film-cap" hidden><b></b><span></span></div>
 <div id="fps" hidden></div>
 <div id="err" hidden role="alert"></div>
 <script type="module" src="src/main.js"></script>

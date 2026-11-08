@@ -7,6 +7,7 @@ import {createAnimator} from './animation.js';
 import {createDirector} from './cameraDirector.js';
 import {createControls, orbit} from './controls.js';
 import {createExplosion} from './explosion.js';
+import {createFilm} from './film.js';
 import {createInteraction} from './interaction.js';
 import {createStudio} from './lighting.js';
 import {makeMaterials} from './materials.js';
@@ -361,6 +362,7 @@ let forceOn = false;
 let renderedFrames = 0; // for tests: wait until the page has stopped drawing
 function loop() {
   requestAnimationFrame(loop);
+  if (window.__octo?.film) return; // the film is drawn frame by frame from film.frame(t), nothing else may draw
   const animMoving = anim.tick();
   if (animMoving || needsRender) {
     lastE = explosion.render(anim.state);
@@ -471,6 +473,16 @@ window.__octo = {
 };
 
 if (params.has('shot')) setView(params.get('shot') || 'hero', 0);
+// STEP 5: ?film -> the film timeline, driven frame by frame by tools/film.mjs (window.__octo.film.frame(t))
+if (params.has('film')) {
+  document.body.classList.add('no-ui', 'film');
+  setAuto(false);
+  setLabels(false);
+  ui.dismissHints();
+  const film = createFilm({camera, ctl, renderer, scene, explosion, anim, director, fitDist, overlay: $('#filmCap')});
+  window.__octo.film = film;
+  film.frame(0);
+}
 requestAnimationFrame(() => {
   renderer.compile(scene, camera);
   loop();
