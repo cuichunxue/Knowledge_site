@@ -1,0 +1,152 @@
+[
+ {
+  "group": "機能",
+  "name": "15 部品グループをメニューから選択・分解できる",
+  "pass": true,
+  "info": "15 groups, all reached e=1: true"
+ },
+ {
+  "group": "機能",
+  "name": "選択した部品の名前・説明カードが出る",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "group": "機能",
+  "name": "8 本の触手を個別に操作できる（動くのはその 1 本だけ）",
+  "pass": true,
+  "info": "P07:T1 P08:T2 P09:T3 P10:T4 P11:T5 P12:T6 P13:T7 P14:T8"
+ },
+ {
+  "group": "機能",
+  "name": "個別に開閉したあと完全に元の位置へ戻る",
+  "pass": true,
+  "info": "rest error 0"
+ },
+ {
+  "group": "機能",
+  "name": "全体分解が最後まで進む（全 15 部品 e=1）",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "group": "機能",
+  "name": "再組み立てで完全復元（全 Transform・全インスタンス行列）",
+  "pass": true,
+  "info": "rest error 0"
+ },
+ {
+  "group": "機能",
+  "name": "スライダーを任意の位置へ動かせる",
+  "pass": true,
+  "info": "0, 0.137, 0.5, 0.731, 1, 0.25"
+ },
+ {
+  "group": "機能",
+  "name": "アニメーション途中で逆再生できる",
+  "pass": true,
+  "info": "reversed at p=0.303, rest error 0"
+ },
+ {
+  "group": "機能",
+  "name": "一時停止 / 再生",
+  "pass": true,
+  "info": "paused at 0.914 (held 0.914), resumed: true"
+ },
+ {
+  "group": "機能",
+  "name": "カメラ操作とアニメーションが競合しない（ドラッグ優先・分解は継続）",
+  "pass": true,
+  "info": "az 35.0 → drag -23.0 → after anim -23.0; explode finished: true"
+ },
+ {
+  "group": "機能",
+  "name": "部品クリックで選択（カメラ P03・触手 7 = P13）、背景クリックで解除",
+  "pass": true,
+  "info": "camera true, arm true, cleared true"
+ },
+ {
+  "group": "機能",
+  "name": "クリック操作のあとも完全復元",
+  "pass": true,
+  "info": "rest error 0"
+ },
+ {
+  "group": "安定性",
+  "name": "分解と組み立てを連続 20 回",
+  "pass": true,
+  "info": "20/20 cycles, worst rest error 0"
+ },
+ {
+  "group": "安定性",
+  "name": "スライダーをランダムに 100 回操作（値の一致）",
+  "pass": true,
+  "info": "0 mismatches"
+ },
+ {
+  "group": "安定性",
+  "name": "決定論的な描画（同じ p → 同じ配置）",
+  "pass": true,
+  "info": "max diff over revisits 0, rest error after 0"
+ },
+ {
+  "group": "安定性",
+  "name": "アニメーション途中で部品を変更",
+  "pass": true,
+  "info": "P03 was at 0.00 → 0, P05 → 1, selected P05"
+ },
+ {
+  "group": "安定性",
+  "name": "メモリ（JS ヒープ・ジオメトリ数・テクスチャ数）",
+  "pass": true,
+  "info": "heap 23.4 → 23.4 MB, geometries 181 → 181, textures 8 → 8"
+ },
+ {
+  "group": "安定性",
+  "name": "FPS 計測（ソフトウェア描画・実機ではない）",
+  "pass": true,
+  "info": "fpsLog=[11.5,0.2,1.1,0.6,0.4,1.1,1.8,0.5,1.4,1.4,0.3,0.4,0.9,1.1,1.1,0.7,0.7,1.4,0.7,0.3,1.5,0.9,0.6,1.1,1.1,0.7,0.6,1,0.7,1,0.4,0.5,0.7,0.7,0.6,0.2,0.4,0.8,0.5,0.8,1,0.4,0.7,0.6,0.7,0.4,1,0.7,0.6,0.4,0.4,0.3,1.1,0.7,0.6,0.7,0.7,0.6,0.7,0.7,0.6,0.7,0.6,1.1,0.7,0.8,0.3,0.6,0.7,1,0.7,0.7,0.3,0.7,0.7,0.6,0.7,1,0.4,0.7,0.6,0.7,0.7,1,0.6,1.1] tier=low calls=332 tris=1240996"
+ },
+ {
+  "group": "安定性",
+  "name": "WebGL / ページエラーなし（デスクトップ）",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "group": "スマホ",
+  "name": "タップで部品を選択・分解し、カードが出る",
+  "pass": true,
+  "info": "tier=low pr=1.5"
+ },
+ {
+  "group": "スマホ",
+  "name": "折りたたみの部品メニュー（開く → 選ぶ → 自動で閉じる）",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "group": "スマホ",
+  "name": "全体分解・再組み立て（タップ）",
+  "pass": true,
+  "info": "rest error 0"
+ },
+ {
+  "group": "スマホ",
+  "name": "タッチ回転・ピンチズーム",
+  "pass": true,
+  "info": "az 35.0 → -1.4, dist 14.94 → 4.11"
+ },
+ {
+  "group": "スマホ",
+  "name": "画面回転（縦 → 横 → 縦）でキャンバスと操作パネルが追従",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "group": "スマホ",
+  "name": "WebGL / ページエラーなし（スマホ）",
+  "pass": true,
+  "info": ""
+ }
+]

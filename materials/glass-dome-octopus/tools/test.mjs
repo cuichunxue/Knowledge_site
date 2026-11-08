@@ -48,9 +48,10 @@ const waitCam = async (p, cond, timeout = 60000) => {
   await p.click('#lblBtn');
   await settle(p, 300);
   const after = await lblVisible();
-  ok('desktop: labels ON -> OFF', before === true && after === false);
+  ok('desktop: labels OFF -> ON', before === false && after === true);
   await p.click('#lblBtn');
   // view buttons
+  await p.click('#moreBtn');
   await p.click('[data-view="side"]');
   const sv = await waitCam(p, 'Math.abs(window.__octo.camState().az - 90) < 1');
   ok('desktop: side view button', Math.abs(sv.az - 90) < 3, `az=${sv.az.toFixed(1)}`);
@@ -72,15 +73,19 @@ const waitCam = async (p, cond, timeout = 60000) => {
   const h = await waitCam(p, 'Math.abs(window.__octo.camState().az - 35) < 1 && Math.abs(window.__octo.camState().el - 20) < 1');
   ok('desktop: double-click resets to the hero view', Math.abs(h.az - 35) < 2 && Math.abs(h.el - 20) < 2, `az=${h.az.toFixed(1)} el=${h.el.toFixed(1)}`);
   // reset button
+  await p.click('#moreBtn');
   await p.click('[data-view="rear"]');
   await waitCam(p, 'Math.abs(Math.abs(window.__octo.camState().az) - 180) < 1');
   await p.click('#resetBtn');
   const h2 = await waitCam(p, 'Math.abs(window.__octo.camState().az - 35) < 1');
   ok('desktop: reset button', Math.abs(h2.az - 35) < 2, `az=${h2.az.toFixed(1)}`);
   // reference overlay + info panel
+  await p.click('#moreBtn');
   await p.click('#refBtn');
   ok('desktop: reference overlay opens', await p.isVisible('#ref'));
+  await p.click('#moreBtn');
   await p.click('#refBtn');
+  await p.click('#moreBtn');
   await p.click('#infoBtn');
   ok('desktop: info panel opens', await p.isVisible('#info'));
   await p.click('#infoClose');
@@ -127,11 +132,18 @@ const waitCam = async (p, cond, timeout = 60000) => {
   await settle(p, 900);
   const m2 = await camState(p);
   ok('mobile: pinch zooms', m2.dist < m1.dist - 0.3, `dist ${m1.dist.toFixed(2)} -> ${m2.dist.toFixed(2)}`);
-  // double tap -> home
+  // double tap -> home. Wait for the camera to come to rest first: while damping keeps the (software-rendered)
+  // page busy, the emulated taps arrive seconds apart and are no longer a double-tap.
+  for (let k = 0; k < 60; k++) {
+    const f0 = await p.evaluate(() => window.__octo.frames);
+    await p.waitForTimeout(1500);
+    if ((await p.evaluate(() => window.__octo.frames)) === f0) break; // nothing drawn for 1.5 s: the page is idle
+  }
+  // explicit event times (as a real device stamps them): taps 150 ms apart even if the page handles them late
+  const t0 = Date.now() / 1000;
   for (let k = 0; k < 2; k++) {
-    await touch('touchStart', [[195, 420]]);
-    await touch('touchEnd', []);
-    await p.waitForTimeout(120);
+    await cdp.send('Input.dispatchTouchEvent', {type: 'touchStart', touchPoints: [{x: 195, y: 420, id: 0}], timestamp: t0 + k * 0.15});
+    await cdp.send('Input.dispatchTouchEvent', {type: 'touchEnd', touchPoints: [], timestamp: t0 + k * 0.15 + 0.05});
   }
   const m3 = await waitCam(p, 'Math.abs(window.__octo.camState().az - 35) < 1');
   ok('mobile: double-tap resets', Math.abs(m3.az - 35) < 2, `az=${m3.az.toFixed(1)}`);

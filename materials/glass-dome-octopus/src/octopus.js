@@ -95,10 +95,12 @@ export function buildOctopus(mats) {
   put(reactor, new THREE.SphereGeometry(0.19, 32, 20), mats.core).castShadow = false;
   put(reactor, new THREE.IcosahedronGeometry(0.19, 1), new THREE.MeshStandardMaterial({color: '#0b2a1c', emissive: '#19e08a', emissiveIntensity: 0.7, wireframe: true}));
   [[0.26, 0.022, 0, 0], [0.31, 0.02, Math.PI / 2, 0.3], [0.36, 0.024, 1.1, -0.6]].forEach(([R, t, rx, rz]) => {
-    const m = put(reactor, new THREE.TorusGeometry(R, t, 10, 64), mats.graphite);
-    m.rotation.set(rx, 0, rz);
-    const gl = put(reactor, new THREE.TorusGeometry(R - t * 0.9, t * 0.35, 6, 64), mats.glow);
-    gl.rotation.copy(m.rotation);
+    // each ring and its glow line in one group, so STEP 4 can swing the rings open around the core
+    const rg = group(reactor, `core-ring-${R}`);
+    rg.rotation.set(rx, 0, rz);
+    rg.userData.ring = true;
+    put(rg, new THREE.TorusGeometry(R, t, 10, 64), mats.graphite);
+    put(rg, new THREE.TorusGeometry(R - t * 0.9, t * 0.35, 6, 64), mats.glow);
   });
   const halo = glowSprite('#2bff9c', 1.35, 0.85); // 2.0 spilled outside the glass (round 2 regression)
   reactor.add(halo);
@@ -116,6 +118,7 @@ export function buildOctopus(mats) {
     put(inner, latheY(ringProfile(0.32, 0.37, 0.46, 0.6, 0.01), a0, a0 + 0.62 * (Math.PI * 2 / 5), {segs: 16}), mats.titanium);
   }
   // an outer ring of 12 small gears and blocks hugging the glass (the reference's dense rim)
+  const rimGears = group(inner, 'rim-gears');
   {
     for (let i = 0; i < 12; i++) {
       const a = (i / 12) * Math.PI * 2 + 0.36;
@@ -125,7 +128,8 @@ export function buildOctopus(mats) {
       g.quaternion.setFromUnitVectors(new V3(0, 0, 1), dir);
       g.position.copy(dir.clone().multiplyScalar(0.84)).setY(0.14 + (i % 2) * 0.1);
       g.castShadow = true;
-      inner.add(g);
+      g.userData.axis = dir.clone();
+      rimGears.add(g);
       const b = new THREE.Mesh(rbox(0.12, 0.16, 0.08, 0.015), mats.black);
       b.position.copy(dir.clone().multiplyScalar(0.72)).setY(0.12);
       b.lookAt(dir.clone().multiplyScalar(3).setY(0.12));
@@ -149,6 +153,9 @@ export function buildOctopus(mats) {
     hub.quaternion.setFromUnitVectors(new V3(0, 1, 0), dir);
     hub.position.copy(g.position);
     gears.add(hub);
+    g.userData.axis = dir.clone();
+    hub.userData.axis = dir.clone();
+    hub.userData.hubOf = g;
   });
   // 8 pistons from the deck up to the top unit, leaning inward
   {
@@ -220,6 +227,7 @@ export function buildOctopus(mats) {
     g.quaternion.setFromUnitVectors(new V3(0, 0, 1), dir);
     g.position.copy(dir.clone().multiplyScalar(0.935));
     g.castShadow = true;
+    g.userData.axis = dir.clone();
     lowerMech.add(g);
   }
   // the plates: 3 rows of curved panels with gaps; a few left out as windows onto the mechanism
@@ -231,6 +239,8 @@ export function buildOctopus(mats) {
       const a1 = off + ((i + 1) / n) * Math.PI * 2 - gap / 2;
       const m = put(plates, latheY(domeProfileRim(R, t, p0, p1), a0, a1, {segs: 16}), mats.shell);
       m.name = `plate-${p0.toFixed(2)}-${i}`;
+      // STEP 4: the direction the plate opens along (its centre's outward normal) and its row
+      m.userData.plate = {dir: sph((p0 + p1) / 2, (a0 + a1) / 2), row: p0 < 110 * D2R ? 0 : p0 < 140 * D2R ? 1 : 2};
     }
   };
   const domeProfileRim = (R, t, p0, p1, steps = 10) => {
@@ -268,6 +278,7 @@ export function buildOctopus(mats) {
   // side flare plates (left and right), the right one marked VT-08
   const flare = (phiC, mark) => {
     const g = group(hull, mark ? 'side-plate-right' : 'side-plate-left');
+    g.userData.plate = {dir: sph(98 * D2R, phiC), row: 0, flare: true};
     put(g, latheY(domeProfileRim(1.1, 0.07, 74 * D2R, 120 * D2R), phiC - 32 * D2R, phiC + 30 * D2R, {segs: 24}), mats.shell);
     // a dark mount behind it and a green painted line along its front edge
     put(g, latheY(domeProfileRim(1.035, 0.04, 78 * D2R, 116 * D2R), phiC - 28 * D2R, phiC + 26 * D2R, {segs: 16}), mats.titanium);

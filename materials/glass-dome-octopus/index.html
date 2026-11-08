@@ -3,149 +3,207 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Glass-Dome Octopus | 3D プロトタイプ</title>
-<meta name="description" content="参考画像1枚から Three.js のコードだけで組み立てた、ガラスドームを持つロボットタコの 3D モデル（STEP 2 プロトタイプ）。">
+<title>Glass-Dome Octopus | 分解できる 3D ロボット</title>
+<meta name="description" content="参考画像1枚から Three.js のコードだけで組み立てたロボットタコ。部品をタップして分解・再組み立てできます。">
 <style>
-:root{--ink:#1d2622;--muted:#5d6b64;--line:rgba(30,45,38,.14);--panel:rgba(255,255,255,.82);--green:#12b06c;--green-d:#0c7d4c;color-scheme:light}
+:root{--ink:#1d2622;--muted:#5d6b64;--line:rgba(30,45,38,.14);--panel:rgba(255,255,255,.86);--green:#12b06c;--green-d:#0c7d4c;--glow:#2bff9c;color-scheme:light}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0;height:100%;overflow:hidden;background:#eef0ef;color:var(--ink);
   font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
-#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
-/* soft vignette over the flat studio colour */
+button{font:inherit;color:inherit;cursor:pointer}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none;cursor:grab}
 /* only darkens the far edges; never lightens the model */
 .vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(130% 100% at 50% 42%,rgba(40,60,50,0) 62%,rgba(40,60,50,.07) 100%)}
+.glass{background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);box-shadow:0 6px 20px rgba(20,40,30,.1)}
+
 header{position:fixed;left:max(16px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top));pointer-events:none}
-header h1{margin:0;font:800 clamp(20px,3.4vw,34px)/1.05 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.01em}
-header p{margin:4px 0 0;font-size:clamp(12px,1.6vw,15px);font-weight:700}
-header small{display:block;margin-top:2px;font-size:12px;color:var(--muted)}
-.ui{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:4px;padding:4px;
-  background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:999px;box-shadow:0 6px 20px rgba(20,40,30,.1);max-width:calc(100vw - 24px);overflow-x:auto;scrollbar-width:none}
-.ui::-webkit-scrollbar{display:none}
-.ui button{border:0;background:transparent;border-radius:999px;padding:6px 11px;font:700 12px/1.2 inherit;color:var(--ink);cursor:pointer;white-space:nowrap}
-.ui button:hover{background:rgba(18,176,108,.1)}
-.ui button[aria-pressed="true"]{background:var(--green);color:#fff}
-.ui .sep{width:1px;background:var(--line);margin:4px 2px;flex:none}
-#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+header h1{margin:0;font:800 clamp(19px,3vw,30px)/1.05 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.01em}
+header p{margin:3px 0 0;font-size:clamp(12px,1.4vw,14px);font-weight:700}
+header small{display:block;margin-top:2px;font-size:11px;color:var(--muted)}
+
+/* top-right tools */
+#tools{position:fixed;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));display:flex;gap:4px;padding:4px;border-radius:999px;z-index:5}
+#tools>button{width:36px;height:36px;border:0;background:transparent;border-radius:50%;font-size:16px;display:grid;place-items:center}
+#tools>button:hover{background:rgba(18,176,108,.1)}
+#tools>button[aria-pressed="true"]{background:var(--green);color:#fff}
+#morePanel{position:fixed;right:max(12px,env(safe-area-inset-right));top:calc(max(12px,env(safe-area-inset-top)) + 50px);border-radius:14px;padding:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px;z-index:6;width:220px}
+#morePanel button{border:0;background:transparent;border-radius:10px;padding:8px;font-size:12px;font-weight:700;text-align:left}
+#morePanel button:hover{background:rgba(18,176,108,.1)}
+#morePanel button[aria-pressed="true"]{color:var(--green-d)}
+#morePanel button[aria-pressed="true"]::after{content:" ✓"}
+#morePanel .wide{grid-column:1/-1}
+
+/* part menu */
+#parts{position:fixed;left:max(12px,env(safe-area-inset-left));top:110px;bottom:96px;width:210px;border-radius:16px;padding:10px 8px;overflow:auto;z-index:4;scrollbar-width:thin}
+#parts h2{font-size:12px;margin:0 6px 6px;color:var(--muted);letter-spacing:.08em}
+#partsList,#partsList ul{list-style:none;margin:0;padding:0}
+.grp>span{display:block;font-size:11px;font-weight:800;color:var(--green-d);margin:8px 6px 3px}
+.part{width:100%;display:flex;align-items:center;gap:8px;border:0;background:transparent;border-radius:10px;padding:6px 8px;font-size:13px;text-align:left}
+.part:hover{background:rgba(18,176,108,.08)}
+.part b{font:700 10px ui-monospace,monospace;color:var(--muted);width:26px}
+.part span{flex:1}
+.part .dot{width:8px;height:8px;border-radius:50%;background:transparent;border:1.5px solid rgba(30,45,38,.25)}
+.part.open .dot{background:var(--glow);border-color:var(--green);box-shadow:0 0 6px var(--glow)}
+.part[aria-pressed="true"]{background:rgba(18,176,108,.14);font-weight:800}
+#partsToggle{display:none}
+
+/* info card */
+#card{position:fixed;right:max(12px,env(safe-area-inset-right));top:64px;width:300px;max-height:calc(100vh - 170px);overflow:auto;border-radius:16px;padding:14px 16px;z-index:4;font-size:13px;line-height:1.65}
+#card .x{position:absolute;right:8px;top:6px;border:0;background:none;font-size:16px;color:var(--muted)}
+#card .id{margin:0;font:700 11px ui-monospace,monospace;color:var(--green-d)}
+#card h2{margin:2px 0 0;font-size:18px;line-height:1.3}
+#card h2 small{display:block;font-size:11px;font-weight:600;color:var(--muted)}
+#card .sub{margin:4px 0 8px;font-weight:700;font-size:12px}
+#card p{margin:0 0 8px}
+#card .motion{background:rgba(18,176,108,.08);border-radius:10px;padding:8px 10px;font-size:12px}
+#card .motion b{display:block;font-size:11px;color:var(--green-d)}
+#card .acts{display:flex;gap:6px;flex-wrap:wrap}
+.act{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700}
+.act.primary{background:var(--green);border-color:var(--green);color:#fff}
+
+/* bottom dock */
+#dock{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;z-index:5;width:min(720px,calc(100vw - 24px))}
+#dock .big{border:0;border-radius:999px;padding:9px 14px;font-weight:800;font-size:13px;white-space:nowrap}
+#explodeBtn{background:var(--green);color:#fff;box-shadow:0 0 0 0 rgba(18,176,108,.5);animation:invite 2.4s 3s 3}
+#assembleBtn{background:#fff;border:1px solid var(--line)!important}
+#playBtn{width:38px;height:38px;border:1px solid var(--line);background:#fff;border-radius:50%;font-size:14px;flex:none}
+#dock label{flex:1;display:flex;align-items:center;gap:8px;min-width:0;font-size:11px;color:var(--muted);font-weight:700}
+#slider{flex:1;min-width:60px;accent-color:var(--green);height:28px}
+#sliderVal{width:36px;text-align:right;font:700 12px ui-monospace,monospace;color:var(--ink)}
+@keyframes invite{0%{box-shadow:0 0 0 0 rgba(18,176,108,.55)}70%{box-shadow:0 0 0 12px rgba(18,176,108,0)}100%{box-shadow:0 0 0 0 rgba(18,176,108,0)}}
+
+/* hotspots + hint */
+#hotspots{position:fixed;inset:0;pointer-events:none;z-index:3}
+.hs{position:absolute;left:0;top:0;pointer-events:auto;border:0;background:none;padding:0}
+.hs i{position:absolute;left:-9px;top:-9px;width:18px;height:18px;border-radius:50%;background:rgba(43,255,156,.35);border:2px solid var(--green);animation:ping 1.6s infinite}
+.hs span{position:absolute;left:14px;top:-11px;white-space:nowrap;font-size:11px;font-weight:800;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+@keyframes ping{0%{transform:scale(.7);opacity:1}100%{transform:scale(1.6);opacity:.2}}
+#hint{position:fixed;left:50%;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 64px);transform:translateX(-50%);font-size:12px;font-weight:700;color:var(--green-d);background:rgba(255,255,255,.85);border:1px solid var(--line);border-radius:999px;padding:4px 12px;pointer-events:none;white-space:nowrap;transition:opacity .5s;z-index:3}
+#hint.gone{opacity:0}
+
+/* labels */
+#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:2}
 .lbl{position:absolute;left:0;top:0;transition:opacity .25s;will-change:transform}
 .lbl i{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(18,176,108,.25)}
-.lbl span{position:absolute;left:10px;top:-38px;white-space:nowrap;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:8px;padding:3px 9px;
-  font-size:12px;font-weight:800;line-height:1.3;box-shadow:0 3px 10px rgba(20,40,30,.08)}
-.lbl span::before{content:"";position:absolute;left:-7px;bottom:-12px;width:14px;height:1px;background:var(--green);transform:rotate(-55deg);transform-origin:right}
+.lbl span{position:absolute;left:10px;top:-38px;white-space:nowrap;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:8px;padding:3px 9px;font-size:12px;font-weight:800;line-height:1.3}
 .lbl small{display:block;font-size:10px;font-weight:600;color:var(--muted)}
 .lbl.flip span{left:auto;right:10px}
-.lbl.flip span::before{left:auto;right:-7px;transform:rotate(55deg);transform-origin:left}
-#ref{position:fixed;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));width:min(300px,40vw);border-radius:10px;overflow:hidden;
-  border:1px solid var(--line);box-shadow:0 8px 24px rgba(20,40,30,.18);cursor:zoom-in;background:#fff;transition:width .2s}
+
+#ref{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:84px;width:min(280px,40vw);border-radius:10px;overflow:hidden;border:1px solid var(--line);box-shadow:0 8px 24px rgba(20,40,30,.18);cursor:zoom-in;background:#fff;transition:width .2s;margin:0;z-index:6}
 #ref.big{width:min(900px,calc(100vw - 24px));cursor:zoom-out}
 #ref img{display:block;width:100%}
 #ref figcaption{font-size:11px;padding:4px 8px;color:var(--muted)}
-#fps{position:fixed;right:10px;bottom:62px;font:11px ui-monospace,monospace;background:rgba(0,0,0,.6);color:#fff;padding:3px 8px;border-radius:6px}
-#err{position:fixed;inset:auto 16px 50% 16px;transform:translateY(50%);background:#fff;border:2px solid #d33;padding:16px;border-radius:12px;font-weight:700;text-align:center}
-dialog#info{position:fixed;margin:0;left:max(12px,env(safe-area-inset-left));top:auto;bottom:70px;width:min(420px,calc(100vw - 24px));max-height:calc(100vh - 160px);overflow:auto;
-  border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);padding:16px 18px;box-shadow:0 10px 30px rgba(20,40,30,.18);font-size:13px;line-height:1.7;color:var(--ink)}
+#fps{position:fixed;right:10px;bottom:70px;font:11px ui-monospace,monospace;background:rgba(0,0,0,.6);color:#fff;padding:3px 8px;border-radius:6px;z-index:7}
+#err{position:fixed;inset:auto 16px 50% 16px;transform:translateY(50%);background:#fff;border:2px solid #d33;padding:16px;border-radius:12px;font-weight:700;text-align:center;z-index:9}
+dialog#info{position:fixed;margin:0;left:50%;top:50%;transform:translate(-50%,-50%);width:min(460px,calc(100vw - 24px));max-height:calc(100vh - 120px);overflow:auto;
+  border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.97);padding:16px 18px;box-shadow:0 10px 30px rgba(20,40,30,.2);font-size:13px;line-height:1.7;color:var(--ink);z-index:8}
 #info h2{font-size:16px;margin:0 0 6px}
 #info h3{font-size:13px;margin:12px 0 4px;color:var(--green-d)}
-#info table{border-collapse:collapse;width:100%;font-size:12px}
-#info td{border-top:1px solid var(--line);padding:3px 4px;vertical-align:top}
-#info td:last-child{white-space:nowrap;font-weight:800}
-#info .Y{color:#0c7d4c}#info .P{color:#b07a00}#info .N{color:#c0392b}
 #info ul{padding-left:1.2em;margin:4px 0}
 #info a{color:var(--green-d)}
-#infoClose{position:absolute;right:10px;top:8px;border:0;background:none;font-size:18px;cursor:pointer;color:var(--muted)}
-.hint{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);font-size:11px;color:var(--muted);pointer-events:none;white-space:nowrap;transition:opacity .6s}
-body.ready .hint{animation:fade 1s 5s forwards}
-@keyframes fade{to{opacity:0}}
-body.no-ui header,body.no-ui .ui,body.no-ui .hint,body.no-ui #ref{display:none!important}
-@media (max-width:600px){.ui{flex-wrap:wrap;justify-content:center;border-radius:18px;width:calc(100vw - 24px)}.ui .sep{display:none}.hint{bottom:104px}.ui button{padding:6px 8px}.lbl span{font-size:11px;top:-34px}.lbl small{display:none}}
+#infoClose{position:absolute;right:10px;top:8px;border:0;background:none;font-size:18px;color:var(--muted)}
+kbd{font:11px ui-monospace,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px;background:#fff}
+body.no-ui header,body.no-ui #tools,body.no-ui #parts,body.no-ui #partsToggle,body.no-ui #card,body.no-ui #dock,body.no-ui #hotspots,body.no-ui #hint,body.no-ui #ref,body.no-ui #morePanel{display:none!important}
+
+/* phones: the 3D first, the menu folds into a sheet */
+@media (max-width:760px){
+  header small{display:none}
+  #parts{top:auto;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 108px);left:12px;right:12px;width:auto;max-height:46vh;transform:translateY(calc(100% + 140px));transition:transform .25s}
+  #parts.open{transform:none}
+  #parts .grp ul{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+  #partsToggle{display:block;position:fixed;left:12px;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 62px);border-radius:999px;padding:7px 14px;font-weight:800;font-size:13px;z-index:5}
+  #card{left:12px;right:12px;width:auto;top:auto;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 108px);max-height:38vh;padding:12px 14px}
+  #card .motion{display:none}
+  #dock{flex-wrap:wrap;border-radius:18px;padding:6px 8px;gap:6px}
+  #dock .big{padding:8px 10px;font-size:12px;flex:1}
+  #dock label span.t{display:none}
+  #hint{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 112px)}
+  #tools>button{width:32px;height:32px;font-size:14px}
+}
 </style>
 <script type="importmap">
 {"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}
 </script>
 </head>
 <body>
-<canvas id="c" tabindex="0" aria-label="Glass-Dome Octopus の 3D モデル。ドラッグで回転、ピンチ・ホイールでズーム、ダブルクリックで視点リセット"></canvas>
+<canvas id="c" tabindex="0" aria-label="Glass-Dome Octopus の 3D モデル。部品をタップすると分解、ドラッグで回転、ピンチ・ホイールでズーム、ダブルクリックで視点リセット"></canvas>
 <div class="vignette"></div>
 <div id="labels"></div>
+<div id="hotspots"></div>
 
 <header>
   <h1>Glass-Dome Octopus</h1>
   <p>ガラスドーム・オクトパス</p>
-  <small>STEP 3 改善版 ― Three.js のコードだけで組み立てた 3D モデル</small>
+  <small>部品をタップして分解・再組み立て ― Three.js のコードだけで組み立てた 3D</small>
 </header>
+
+<nav id="tools" class="glass" aria-label="表示ツール">
+  <button id="resetBtn" title="リセット（R）" aria-label="リセット">⟲</button>
+  <button id="autoBtn" title="自動回転" aria-label="自動回転" aria-pressed="false">⟳</button>
+  <button id="lblBtn" title="ラベル表示（L）" aria-label="ラベル表示" aria-pressed="false">🏷</button>
+  <button id="fsBtn" title="全画面" aria-label="全画面">⛶</button>
+  <button id="moreBtn" title="その他" aria-label="その他" aria-expanded="false">⋯</button>
+</nav>
+<div id="morePanel" class="glass" hidden>
+  <button data-view="front">正面</button>
+  <button data-view="side">側面</button>
+  <button data-view="rear">背面</button>
+  <button data-view="top">上</button>
+  <button data-view="oblique">斜め</button>
+  <button data-view="hero">参考構図</button>
+  <button id="focusBtn" class="wide" aria-pressed="true">選択部品以外を半透明にする</button>
+  <button id="refBtn" class="wide">🖼 参考画像と比べる</button>
+  <button id="infoBtn" class="wide">ⓘ このモデルについて・操作方法</button>
+</div>
+
+<aside id="parts" class="glass" aria-label="部品">
+  <h2>部品をえらぶ</h2>
+  <ul id="partsList"></ul>
+</aside>
+<button id="partsToggle" class="glass" aria-expanded="false" aria-controls="parts">🧩 部品</button>
+
+<section id="card" class="glass" hidden aria-live="polite"></section>
+
+<p id="hint">部品をタップすると分解できます</p>
+
+<div id="dock" class="glass" role="group" aria-label="分解の操作">
+  <button id="explodeBtn" class="big">💥 全体分解</button>
+  <button id="assembleBtn" class="big">🔧 再組み立て</button>
+  <button id="playBtn" aria-label="再生">▶</button>
+  <label><span class="t">分解</span><input id="slider" type="range" min="0" max="1000" value="0" aria-label="分解の進み具合"><span id="sliderVal">0%</span></label>
+</div>
 
 <figure id="ref" hidden>
   <img src="assets/reference.png" alt="参考画像：Glass-Dome Octopus のインフォグラフィック">
   <figcaption>参考画像（クリックで拡大）― 3D はこの中央のタコを基準に再構築</figcaption>
 </figure>
 
-<p class="hint">ドラッグで回転 ・ ピンチ／ホイールでズーム ・ ダブルタップで戻る</p>
-
-<nav class="ui" aria-label="表示操作">
-  <button id="resetBtn" title="視点リセット (R)">⟲ リセット</button>
-  <button id="autoBtn" aria-pressed="true" title="自動回転 (Space)">⟳ 自動回転</button>
-  <button id="lblBtn" aria-pressed="true" title="部品名 (L)">🏷 部品名</button>
-  <span class="sep"></span>
-  <button data-view="front">正面</button>
-  <button data-view="side">側面</button>
-  <button data-view="rear">背面</button>
-  <button data-view="top">上</button>
-  <button data-view="oblique">斜め</button>
-  <span class="sep"></span>
-  <button id="refBtn" aria-pressed="false" title="参考画像と同じ構図で比較">🖼 参考構図</button>
-  <button id="infoBtn" title="このモデルについて">ⓘ</button>
-</nav>
-
 <dialog id="info">
   <button id="infoClose" aria-label="閉じる">✕</button>
   <h2>このモデルについて</h2>
-  <p>参考画像 1 枚を数値で測り、チェックリストを書いてから Three.js のコードだけで組み立て、STEP 3 で参考との差を計測して 2 ラウンド改善したモデルです。画像を 3D 空間に貼り付けてはいません。</p>
-  <h3>構成</h3>
+  <p>参考画像 1 枚を数値で測り、Three.js のコードだけで組み立てたロボットタコです（画像を貼り付けてはいません）。STEP 4 で、15 の部品グループを分解・再組み立てできるようにしました。</p>
+  <h3>あそびかた</h3>
   <ul>
-    <li>透明ガラス（球の上 61%）＋発光コア、ギア 30・ピストン 8・ホース・上部ユニット</li>
-    <li>白い装甲パネル 3 段（隙間と窓から暗い機構）、側面フレア板</li>
-    <li>前方カメラ・副レンズ・後方ジェットノズル</li>
-    <li>触手 8 本：各 <span id="segInfo">12〜14</span> 節の関節階層（Object3D の親子）＋ InstancedMesh</li>
+    <li><b>部品をタップ</b>：その部品が開いて、カメラが寄ります。もう一度タップで閉じます。何もない所をタップすると閉じます。</li>
+    <li><b>💥 全体分解</b>：ドーム → パネル → カメラ → ギア → コア → 触手 8 本 → 推進ユニット → パッドの順に開きます。</li>
+    <li><b>🔧 再組み立て</b>：逆順に戻ります。<b>スライダー</b>で途中の状態を自由に見られます。</li>
+    <li>ドラッグで回転、ピンチ／ホイールでズーム、ダブルタップで元の視点。キー：<kbd>E</kbd> 分解 <kbd>A</kbd> 組立 <kbd>Space</kbd> 一時停止 <kbd>Esc</kbd> 閉じる <kbd>R</kbd> リセット</li>
   </ul>
-  <h3>品質評価（STEP 3・ラウンド 2）重み付き 79.0 点</h3>
-  <p style="font-size:11px;color:var(--muted);margin:0 0 4px">内部の品質管理指標で、画像類似度ではありません。目標 85 点には未達です。</p>
-  <table id="grade"></table>
+  <h3>部品（15 グループ）</h3>
+  <p>P01 ガラスドーム／P02 AI コア／P03 前方カメラ／P04 外装パネル／P05 内部ギア／P06 推進ユニット／P07〜P14 触手 1〜8／P15 吸着パッド</p>
   <h3>ドキュメント</h3>
   <ul>
-    <li><a href="CHECKLIST.md" target="_blank" rel="noopener">CHECKLIST.md</a>（計測値と 12 項目）</li>
-    <li><a href="JOB_DESCRIPTION.md" target="_blank" rel="noopener">JOB_DESCRIPTION.md</a>（共通ルール＋修正ログ）</li>
-    <li><a href="README.md" target="_blank" rel="noopener">README.md</a>（評価・テスト結果・使い方）</li>
-    <li><a href="QUALITY_REPORT.md" target="_blank" rel="noopener">QUALITY_REPORT.md</a>（実測値・改善前後・未解決の問題）</li>
-    <li><a href="screenshots/comparison.png" target="_blank" rel="noopener">比較画像</a>（参考｜改善前｜R1｜R2）</li>
+    <li><a href="STEP4_TEST_REPORT.md" target="_blank" rel="noopener">STEP4_TEST_REPORT.md</a>（分解機能のテスト結果）</li>
+    <li><a href="QUALITY_REPORT.md" target="_blank" rel="noopener">QUALITY_REPORT.md</a>（STEP 3 の外観評価：重み付き 79.0 点、目標 85 未達）</li>
+    <li><a href="README.md" target="_blank" rel="noopener">README.md</a>・<a href="CHECKLIST.md" target="_blank" rel="noopener">CHECKLIST.md</a>・<a href="JOB_DESCRIPTION.md" target="_blank" rel="noopener">JOB_DESCRIPTION.md</a></li>
   </ul>
   <p style="color:var(--muted);font-size:11px">参考技術：<a href="https://github.com/Nyxera0x/cutaway" target="_blank" rel="noopener">Nyxera0x/cutaway</a>（MIT）</p>
 </dialog>
 
 <div id="fps" hidden></div>
 <div id="err" hidden role="alert"></div>
-
-<script>
-  // STEP 3 grading after round 2 (internal QA index, not an image-similarity measure; details in QUALITY_REPORT.md)
-  window.GRADE = [
-    [1, '全体プロポーション 15%', 'PARTIAL 74'],
-    [2, '8本の触手の形状・配置 15%', 'YES 88'],
-    [3, '触手の関節・機械構造 10%', 'YES 85'],
-    [4, 'ガラスドームの透明感 10%', 'YES 90'],
-    [5, 'AIコアと内部構造 10%', 'PARTIAL 82'],
-    [6, '白い装甲の形状・分割 10%', 'PARTIAL 61'],
-    [7, '前方カメラ 5%', 'PARTIAL 83'],
-    [8, '金属・ガラス・装甲の質感 5%', 'PARTIAL 78'],
-    [9, '緑色発光 5%', 'PARTIAL 72'],
-    [10, '機械部品の密度・精密感 5%', 'PARTIAL 67'],
-    [11, '照明・影・構図 5%', 'PARTIAL 73'],
-    [12, '360度表示の破綻 5%', 'YES 85'],
-  ];
-</script>
 <script type="module" src="src/main.js"></script>
-<script type="module">
-  const t = document.getElementById('grade');
-  t.innerHTML = (window.GRADE || []).map(([n, txt, g]) => `<tr><td>${n}</td><td>${txt}</td><td class="${g[0]}">${g}</td></tr>`).join('');
-</script>
 <script nomodule>document.getElementById('err').hidden=false;document.getElementById('err').textContent='このブラウザは対応していません（最新の Chrome / Safari / Edge / Firefox で開いてください）。';</script>
 </body>
 </html>

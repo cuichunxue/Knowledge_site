@@ -1,0 +1,520 @@
+{
+ "bodies": 139,
+ "restContacts": 850,
+ "sweep": [
+  {
+   "label": "p=0.000",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "p=0.025",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "p=0.050",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "p=0.075",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "p=0.100",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "p=0.125",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "p=0.150",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "p=0.175",
+   "newContacts": 1,
+   "pairs": {
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.200",
+   "newContacts": 3,
+   "pairs": {
+    "P03 x P04": 1,
+    "P04 x T2": 2
+   }
+  },
+  {
+   "label": "p=0.225",
+   "newContacts": 5,
+   "pairs": {
+    "P04 x P05": 3,
+    "P03 x P04": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.250",
+   "newContacts": 3,
+   "pairs": {
+    "P04 x P05": 2,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.275",
+   "newContacts": 3,
+   "pairs": {
+    "P04 x P05": 2,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.300",
+   "newContacts": 3,
+   "pairs": {
+    "P04 x P05": 2,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.325",
+   "newContacts": 25,
+   "pairs": {
+    "P04 x P05": 14,
+    "P05 x P06": 2,
+    "P05 x T3": 2,
+    "P02 x P05": 4,
+    "P05 x T2": 1,
+    "P05 x T4": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.350",
+   "newContacts": 15,
+   "pairs": {
+    "P04 x P05": 7,
+    "P05 x P06": 1,
+    "P05 x T1": 1,
+    "P05 x T3": 2,
+    "P02 x P05": 2,
+    "P05 x T2": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.375",
+   "newContacts": 5,
+   "pairs": {
+    "P04 x P05": 2,
+    "P05 x P06": 1,
+    "P05 x T2": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.400",
+   "newContacts": 13,
+   "pairs": {
+    "P04 x P05": 6,
+    "P05 x P06": 2,
+    "P02 x P05": 2,
+    "P05 x T2": 1,
+    "P05 x T3": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.425",
+   "newContacts": 11,
+   "pairs": {
+    "P04 x P05": 3,
+    "P05 x P06": 1,
+    "P05 x T1": 1,
+    "P05 x T3": 2,
+    "P02 x P05": 2,
+    "P05 x T2": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.450",
+   "newContacts": 11,
+   "pairs": {
+    "P04 x P05": 4,
+    "P05 x P06": 1,
+    "P02 x P05": 2,
+    "P05 x T2": 1,
+    "P05 x T3": 1,
+    "P05 x T4": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.475",
+   "newContacts": 10,
+   "pairs": {
+    "P04 x P05": 2,
+    "P02 x P05": 6,
+    "P05 x T2": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.500",
+   "newContacts": 12,
+   "pairs": {
+    "P04 x P05": 2,
+    "P02 x P05": 8,
+    "P05 x T2": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.525",
+   "newContacts": 4,
+   "pairs": {
+    "P04 x P05": 2,
+    "P05 x T2": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.550",
+   "newContacts": 4,
+   "pairs": {
+    "P04 x P05": 2,
+    "P05 x T2": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.575",
+   "newContacts": 5,
+   "pairs": {
+    "P04 x T1": 1,
+    "P04 x P05": 2,
+    "P05 x T2": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.600",
+   "newContacts": 4,
+   "pairs": {
+    "P04 x T2": 1,
+    "P04 x P05": 2,
+    "P05 x T2": 1
+   }
+  },
+  {
+   "label": "p=0.625",
+   "newContacts": 3,
+   "pairs": {
+    "P04 x T3": 1,
+    "P04 x P05": 2
+   }
+  },
+  {
+   "label": "p=0.650",
+   "newContacts": 3,
+   "pairs": {
+    "P04 x T4": 1,
+    "P04 x P05": 2
+   }
+  },
+  {
+   "label": "p=0.675",
+   "newContacts": 3,
+   "pairs": {
+    "P04 x T5": 1,
+    "P04 x P05": 2
+   }
+  },
+  {
+   "label": "p=0.700",
+   "newContacts": 7,
+   "pairs": {
+    "P04 x T5": 2,
+    "P04 x T6": 1,
+    "P04 x P05": 4
+   }
+  },
+  {
+   "label": "p=0.725",
+   "newContacts": 5,
+   "pairs": {
+    "P04 x T6": 1,
+    "P04 x P05": 4
+   }
+  },
+  {
+   "label": "p=0.750",
+   "newContacts": 9,
+   "pairs": {
+    "P04 x T8": 1,
+    "P04 x T7": 1,
+    "P04 x P05": 5,
+    "P05 x T7": 2
+   }
+  },
+  {
+   "label": "p=0.775",
+   "newContacts": 10,
+   "pairs": {
+    "P04 x T8": 1,
+    "P04 x P05": 7,
+    "P04 x P06": 2
+   }
+  },
+  {
+   "label": "p=0.800",
+   "newContacts": 6,
+   "pairs": {
+    "P04 x P05": 6
+   }
+  },
+  {
+   "label": "p=0.825",
+   "newContacts": 6,
+   "pairs": {
+    "P04 x P05": 6
+   }
+  },
+  {
+   "label": "p=0.850",
+   "newContacts": 6,
+   "pairs": {
+    "P04 x P05": 6
+   }
+  },
+  {
+   "label": "p=0.875",
+   "newContacts": 6,
+   "pairs": {
+    "P04 x P05": 6
+   }
+  },
+  {
+   "label": "p=0.900",
+   "newContacts": 6,
+   "pairs": {
+    "P04 x P05": 6
+   }
+  },
+  {
+   "label": "p=0.925",
+   "newContacts": 6,
+   "pairs": {
+    "P04 x P05": 6
+   }
+  },
+  {
+   "label": "p=0.950",
+   "newContacts": 6,
+   "pairs": {
+    "P04 x P05": 6
+   }
+  },
+  {
+   "label": "p=0.975",
+   "newContacts": 6,
+   "pairs": {
+    "P04 x P05": 6
+   }
+  },
+  {
+   "label": "p=1.000",
+   "newContacts": 6,
+   "pairs": {
+    "P04 x P05": 6
+   }
+  }
+ ],
+ "single": [
+  {
+   "label": "P01 e=0.5",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P01 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P02 e=0.5",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P02 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P03 e=0.5",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P03 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P04 e=0.5",
+   "newContacts": 6,
+   "pairs": {
+    "P01 x P04": 2,
+    "P04 x P05": 1,
+    "P03 x P04": 1,
+    "P04 x T2": 2
+   }
+  },
+  {
+   "label": "P04 e=1",
+   "newContacts": 5,
+   "pairs": {
+    "P01 x P04": 1,
+    "P04 x P05": 2,
+    "P03 x P04": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "P05 e=0.5",
+   "newContacts": 6,
+   "pairs": {
+    "P02 x P05": 2,
+    "P03 x P05": 1,
+    "P03 x P04": 1,
+    "P04 x T2": 2
+   }
+  },
+  {
+   "label": "P05 e=1",
+   "newContacts": 11,
+   "pairs": {
+    "P04 x P05": 2,
+    "P02 x P05": 6,
+    "P05 x T2": 1,
+    "P03 x P04": 1,
+    "P04 x T2": 1
+   }
+  },
+  {
+   "label": "P06 e=0.5",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P06 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P07 e=0.5",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P07 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P08 e=0.5",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P08 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P09 e=0.5",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P09 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P10 e=0.5",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P10 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P11 e=0.5",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P11 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P12 e=0.5",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P12 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P13 e=0.5",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P13 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P14 e=0.5",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P14 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  },
+  {
+   "label": "P15 e=0.5",
+   "newContacts": 3,
+   "pairs": {
+    "P04 x T5": 1,
+    "P03 x T5": 2
+   }
+  },
+  {
+   "label": "P15 e=1",
+   "newContacts": 0,
+   "pairs": {}
+  }
+ ],
+ "restError": 0
+}

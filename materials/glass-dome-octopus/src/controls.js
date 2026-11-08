@@ -41,22 +41,15 @@ export function createControls(camera, dom, {target, home, onChange}) {
   // home may be a function, so it is measured at the current aspect (portrait phones need a longer distance)
   const reset = (ms) => goTo(typeof home === 'function' ? home() : home, ms);
 
-  // double click / double tap -> home
-  dom.addEventListener('dblclick', () => reset());
-  let lastTap = 0;
-  dom.addEventListener('touchend', (e) => {
-    if (e.touches.length) return;
-    const now = performance.now();
-    if (now - lastTap < 300) reset();
-    lastTap = now;
-  }, {passive: true});
+  // double click / double tap -> home: detected in interaction.js together with the single tap (one place,
+  // so a double-tap can never also open a part), which calls reset()
   controls.addEventListener('start', () => (tween = null));
   controls.addEventListener('change', () => onChange?.());
 
   /** Advance damping / tween / auto-rotate; returns true while the view is still moving. */
   const update = () => {
     if (tween) {
-      const k = Math.min(1, (performance.now() - tween.t0) / tween.ms);
+      const k = tween.ms <= 1 ? 1 : Math.min(1, (performance.now() - tween.t0) / tween.ms);
       const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
       // orbit-interpolate so the camera swings round instead of cutting through the model
       const sFrom = new THREE.Spherical().setFromVector3(tween.from.clone().sub(tween.fromT));

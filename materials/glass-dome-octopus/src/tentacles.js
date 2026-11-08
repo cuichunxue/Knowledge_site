@@ -122,10 +122,12 @@ function unitParts() {
   const cup = new THREE.CylinderGeometry(0.27, 0.31, 0.16, 16);
   const rim = new THREE.TorusGeometry(0.245, 0.068, 6, 20).rotateX(Math.PI / 2).translate(0, 0.085, 0);
   const eye = new THREE.CylinderGeometry(0.11, 0.11, 0.2, 10);
-  const padMats = [padAt(0.8, 180 * D2R - 0.48, 0.82), padAt(0.8, 180 * D2R + 0.48, 0.82), padAt(X1 + 0.18, 180 * D2R - 1.95, 0.84), padAt(X1 + 0.18, 180 * D2R + 1.95, 0.84)];
-  const pads = merge(padMats.map((mm) => cup.clone().applyMatrix4(mm)));
-  const padGlow = merge(padMats.map((mm) => rim.clone().applyMatrix4(mm)));
-  const padEye = merge(padMats.map((mm) => eye.clone().applyMatrix4(mm)));
+  const padDefs = [[0.8, 180 * D2R - 0.48, 0.82], [0.8, 180 * D2R + 0.48, 0.82], [X1 + 0.18, 180 * D2R - 1.95, 0.84], [X1 + 0.18, 180 * D2R + 1.95, 0.84]];
+  // each pad on its own (cup / rim / eye), with the outward normal it lifts along when opened (STEP 4)
+  const padParts = padDefs.map(([x, a, out]) => {
+    const mm = padAt(x, a, out);
+    return {cup: cup.clone().applyMatrix4(mm), rim: rim.clone().applyMatrix4(mm), eye: eye.clone().applyMatrix4(mm), n: new V3(0, Math.cos(a), Math.sin(a))};
+  });
   // dark slots cut into the shell: one along the top, one on each flank
   const slot = (x, a, w) => new THREE.BoxGeometry(w, 0.06, 0.18).translate(0, 1.02, 0).applyMatrix4(new THREE.Matrix4().makeRotationX(a)).translate(x, 0, 0);
   const slots = merge([slot(0.75, 64 * D2R, 0.46), slot(0.75, -64 * D2R, 0.46), slot(0.72, 0, 0.42)]);
@@ -138,9 +140,15 @@ function unitParts() {
   const tipGlow = ring(1.4, 1.52, 0.6, 0.66, 0.01, {segs: 20});
   // the root collar where the arm leaves the body: a white cowl, a dark ring, a green line
   const collar = ring(-0.6, 0.3, 0.95, 1.3, 0.06, {segs: 32});
-  const collarDark = ring(0.28, 0.5, 0.8, 1.12, 0.03, {segs: 32});
+  // the locking ring: 4 small teeth on it so its quarter-turn unlock reads (STEP 4)
+  const collarDark = merge([ring(0.28, 0.5, 0.8, 1.12, 0.03, {segs: 32}),
+    ...[0, 1, 2, 3].map((k) => new THREE.BoxGeometry(0.14, 0.06, 0.1).translate(0.39, 1.14, 0).rotateX(k * Math.PI / 2 + Math.PI / 4))]);
+  // the joint's inner works, only seen when the joints open (STEP 4): a centre axle and two side pistons,
+  // built along +x from 0 to 1 so they can be stretched over the gap
+  const axle = merge([cylX(0.3, 0.3, 1, 14).translate(0.5, 0, 0), cylX(0.075, 0.075, 1, 8).translate(0.5, 0.0, 0.52), cylX(0.075, 0.075, 1, 8).translate(0.5, 0.0, -0.52)]);
+  const axleDark = merge([cylX(0.14, 0.14, 0.55, 10).translate(0.275, 0, 0.52), cylX(0.14, 0.14, 0.55, 10).translate(0.275, 0, -0.52), cylX(0.42, 0.42, 0.12, 18).translate(0.94, 0, 0)]);
   const collarGlow = ring(0.3, 0.36, 1.11, 1.16, 0.01, {segs: 32});
-  return {shell, seam, jointGlow, under, core, joint, pins, pads, padGlow, padEye, slots, bolts, tip, tipGlow, collar, collarDark, collarGlow};
+  return {shell, seam, jointGlow, under, core, joint, pins, padParts, slots, bolts, tip, tipGlow, collar, collarDark, collarGlow, axle, axleDark};
 }
 
 /**
@@ -215,70 +223,183 @@ export function buildTentacles(mats) {
       s += L;
       if (last) break;
     }
-    arms.push({name: spec.name, spec, root, joints, radii, curve, length: len});
+    // STEP 4: rest transforms (every pose is computed from these, never accumulated) and the detach direction
+    const az = (HERO_AZ + spec.theta) * D2R;
+    const out = new V3(Math.sin(az), 0, Math.cos(az));
+    const detachDir = out.clone().multiplyScalar(spec.kind === 'raised' ? 0.8 : 0.92).add(new V3(0, spec.kind === 'raised' ? 0.3 : 0.18, 0)).normalize();
+    const rest = joints.map((jj) => ({p: jj.position.clone(), q: jj.quaternion.clone()}));
+    arms.push({name: spec.name, spec, root, joints, radii, curve, length: len, azimuth: az, detachDir, rest,
+      pose: {slide: 0, lock: 0, open: 0, pad: 0}, gaps: joints.map(() => 0)});
   }
 
   // ---- instanced parts: one InstancedMesh per part type for all arms
   const segJoints = [];
   const tipJoints = [];
   const rootJoints = [];
+  const axleJoints = [];
   for (const a of arms) {
     a.joints.forEach((j, i) => {
+      j.userData.arm = a;
       if (j.userData.last) tipJoints.push(j);
       else segJoints.push(j);
       if (i === 0) rootJoints.push(j);
+      else axleJoints.push(j);
     });
   }
+  // kind: how the instance matrix is built (see update); tint: carries a per-arm colour; pick: raycast target
+  const L = (geo, mat, joints, kind = 'seg', extra = {}) => ({geo, mat, joints, kind, ...extra});
   const layers = [
-    // [geometry, material, which joints]
-    [U.shell, mats.shell, segJoints],
-    [U.seam, mats.titanium, segJoints],
-    [U.jointGlow, mats.glow, segJoints],
-    [U.under, mats.titanium, segJoints],
-    [U.core, mats.graphite, segJoints],
-    [U.joint, mats.titanium, segJoints],
-    [U.pins, mats.steel, segJoints],
-    [U.pads, mats.graphite, segJoints],
-    [U.padGlow, mats.glow, segJoints],
-    [U.padEye, mats.black, segJoints],
-    [U.slots, mats.black, segJoints],
-    [U.bolts, mats.steel, segJoints],
-    [U.tip, mats.shell, tipJoints],
-    [U.tipGlow, mats.glow, tipJoints],
-    [U.collar, mats.shell, rootJoints],
-    [U.collarDark, mats.titanium, rootJoints],
-    [U.collarGlow, mats.glow, rootJoints],
+    L(U.shell, mats.shell, segJoints, 'seg', {tint: true, pick: true, outline: true}),
+    L(U.seam, mats.titanium, segJoints),
+    L(U.jointGlow, mats.glow, segJoints),
+    L(U.under, mats.titanium, segJoints, 'seg', {tint: true, pick: true}),
+    L(U.core, mats.graphite, segJoints),
+    L(U.joint, mats.titanium, segJoints, 'seg', {pick: true}),
+    L(U.pins, mats.steel, segJoints, 'seg', {detail: true}),
+    ...U.padParts.flatMap((pp, k) => [
+      L(pp.cup, mats.graphite, segJoints, 'pad', {n: pp.n, off: 0.35, pick: true, pad: true}),
+      L(pp.rim, mats.glow, segJoints, 'pad', {n: pp.n, off: 0.62, pad: true}),
+      L(pp.eye, mats.black, segJoints, 'pad', {n: pp.n, off: 0.95, pad: true}),
+    ]),
+    L(U.slots, mats.black, segJoints, 'seg', {detail: true}),
+    L(U.bolts, mats.steel, segJoints, 'seg', {detail: true}),
+    L(U.tip, mats.shell, tipJoints, 'seg', {tint: true, pick: true, outline: true}),
+    L(U.tipGlow, mats.glow, tipJoints),
+    L(U.collar, mats.shell, rootJoints, 'seg', {tint: true, pick: true, outline: true}),
+    L(U.collarDark, mats.titanium, rootJoints, 'lock'),
+    L(U.collarGlow, mats.glow, rootJoints),
+    L(U.axle, mats.steel, axleJoints, 'axle'),
+    L(U.axleDark, mats.graphite, axleJoints, 'axle'),
   ];
-  const meshes = layers.map(([geo, mat, js]) => {
-    const im = new THREE.InstancedMesh(geo, mat, js.length);
-    im.userData.joints = js;
+  const meshes = layers.map((ly) => {
+    const im = new THREE.InstancedMesh(ly.geo, ly.mat, ly.joints.length);
+    im.userData = {joints: ly.joints, layer: ly, pickable: !!ly.pick, detail: !!ly.detail};
     im.castShadow = true;
     im.receiveShadow = true;
     im.frustumCulled = false; // instances span the whole octopus; the bounding sphere of the unit part would cull them
+    if (ly.tint) {
+      // per-arm tint (selection / dimming); white = the approved look
+      im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(ly.joints.length * 3).fill(1), 3);
+    }
     group.add(im);
     return im;
   });
 
+  // ---- the pose of one arm (STEP 4): absolute, from the rest transforms
+  const stage = (e, a, b) => Math.min(1, Math.max(0, (e - a) / (b - a)));
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  function applyPose(arm) {
+    const {slide, open} = arm.pose;
+    arm.root.position.copy(arm.detachDir).multiplyScalar(1.1 * ease(slide));
+    arm.root.quaternion.identity();
+    const n = arm.joints.length;
+    arm.joints.forEach((j, i) => {
+      j.position.copy(arm.rest[i].p);
+      j.quaternion.copy(arm.rest[i].q);
+      arm.gaps[i] = 0;
+      if (i === 0) return;
+      // the joints open one after another, root first; the gap is half the parent segment's radius
+      const t0 = (0.75 * (i - 1)) / (n - 1);
+      const g = 0.5 * arm.joints[i - 1].userData.radius * ease(stage(open, t0, t0 + 0.25));
+      arm.gaps[i] = g;
+      j.position.x += g; // along the parent segment's axis: the segment slides off its joint
+    });
+  }
+
   const m = new THREE.Matrix4();
   const S = new THREE.Matrix4();
+  const T = new THREE.Matrix4();
+  const R = new THREE.Matrix4();
   const inv = new THREE.Matrix4();
+  const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+  let outline = null; // {arm, meshes}
   function update() {
+    for (const a of arms) applyPose(a);
     group.updateMatrixWorld(true);
     inv.copy(group.matrixWorld).invert();
     for (const im of meshes) {
+      const ly = im.userData.layer;
       im.userData.joints.forEach((j, i) => {
         const r = j.userData.radius;
+        const arm = j.userData.arm;
         // length follows the segment's own length (close to SEG_L * r), section follows its radius
         const sx = j.userData.last ? r : j.userData.length / SEG_L;
         S.makeScale(sx, r, r);
-        m.multiplyMatrices(inv, j.matrixWorld).multiply(S);
+        m.multiplyMatrices(inv, j.matrixWorld);
+        if (ly.kind === 'axle') {
+          const g = arm.gaps[j.userData.index];
+          if (g < 1e-4) {
+            im.setMatrixAt(i, ZERO);
+            return;
+          }
+          const rp = arm.joints[j.userData.index - 1].userData.radius;
+          m.multiply(T.makeTranslation(-g, 0, 0)).multiply(S.makeScale(g, rp, rp));
+        } else {
+          m.multiply(S);
+          if (ly.kind === 'lock') m.multiply(R.makeRotationX(ease(arm.pose.lock) * Math.PI / 2));
+          if (ly.kind === 'pad') {
+            const k = ly.off * ease(Math.max(arm.pose.pad, 0.35 * stage(arm.pose.open, 0.5, 1)));
+            m.multiply(T.makeTranslation(ly.n.x * k, ly.n.y * k, ly.n.z * k));
+          }
+        }
         im.setMatrixAt(i, m);
       });
       im.instanceMatrix.needsUpdate = true;
+      im.boundingSphere = null; // recomputed lazily by the raycaster
+    }
+    if (outline) {
+      for (const om of outline.meshes) {
+        om.userData.joints.forEach((j, i) => {
+          const r = j.userData.radius;
+          const sx = j.userData.last ? r : j.userData.length / SEG_L;
+          m.multiplyMatrices(inv, j.matrixWorld).multiply(S.makeScale(sx, r, r));
+          om.setMatrixAt(i, m);
+        });
+        om.instanceMatrix.needsUpdate = true;
+      }
     }
   }
   update();
 
+  /** Tint one arm (selection) and optionally dim the others; null clears. */
+  function setTint(armName, sel = [0.82, 1, 0.9], dim = [1, 1, 1]) {
+    for (const im of meshes) {
+      if (!im.instanceColor) continue;
+      im.userData.joints.forEach((j, i) => {
+        const c = !armName ? [1, 1, 1] : j.userData.arm.name === armName ? sel : dim;
+        im.instanceColor.setXYZ(i, c[0], c[1], c[2]);
+      });
+      im.instanceColor.needsUpdate = true;
+    }
+  }
+  /** Green outline around one arm (inverted hull, see interaction.js); null clears. */
+  function setOutline(armName, material) {
+    if (outline) {
+      outline.meshes.forEach((om) => {
+        group.remove(om);
+        om.dispose();
+      });
+      outline = null;
+    }
+    const arm = arms.find((a) => a.name === armName);
+    if (!arm || !material) return;
+    const ms = layers.filter((ly) => ly.outline).map((ly) => {
+      const js = ly.joints.filter((j) => j.userData.arm === arm);
+      const om = new THREE.InstancedMesh(ly.geo, material, js.length);
+      om.userData = {joints: js, outline: true};
+      om.frustumCulled = false;
+      om.renderOrder = 3;
+      group.add(om);
+      return om;
+    });
+    outline = {arm, meshes: ms};
+    update();
+  }
+  /** Distance-based detail culling (LOD): hide pins, slots and bolts when the camera is far away. */
+  function setDetail(on) {
+    for (const im of meshes) if (im.userData.detail) im.visible = on;
+  }
+
   const count = () => meshes.reduce((n, im) => n + im.count, 0);
-  return {group, arms, update, count, meshes};
+  return {group, arms, update, count, meshes, setTint, setOutline, setDetail};
 }
