@@ -26,7 +26,7 @@
  *   tags        キーワード（検索対象）
  *   date        公開日 YYYY-MM-DD（30日以内は NEW 表示）
  */
-window.MATERIALS_VERSION = "5";
+window.MATERIALS_VERSION = "6";
 
 /* 管理画面のパスワード（SHA-256 ハッシュ。パスワードそのものは書かない）
  * Mini Game Arcade と同じパスワードで入れます。
@@ -34,6 +34,34 @@ window.MATERIALS_VERSION = "5";
 window.ADMIN_PASSWORD_HASH = "c7793f384cf22b066d54f9b21c81c3cb8ef8c240488cfd3654c551c5dc2c0534";
 
 window.MATERIALS = [
+  {
+    id: "raijin-gpr-v4",
+    title: "RAIJIN GPR-V4 — V4レーシングバイクの3D設計モデル",
+    description: "架空のV4レーシングプロトタイプ。外装・透視・内部の表示切替、走行・コーナリング・ウィリーなどのモーションで、サスペンション・操舵・チェーン・エンジン内部が連動。部品と仕様の解説つき。",
+    path: "materials/raijin-gpr-v4/index.html",
+    emoji: "🏍️",
+    color: "#1a2410",
+    accent: "#cdeb14",
+    category: "3Dモデル",
+    level: "初級",
+    duration: "10分",
+    tags: ["3D", "WebGL", "バイク", "メカ設計", "モーション", "Claude"],
+    date: "2026-11-13"
+  },
+  {
+    id: "raijin-x1",
+    title: "RAIJIN X1 — ヒューマノイドロボットの3D設計モデル",
+    description: "架空の汎用ヒューマノイド。外装・透視・内部の表示切替、待機・歩行・走行・ダンスのモーション、部品・三層の頭脳（知能）・仕様の解説つき。",
+    path: "materials/raijin-x1/index.html",
+    emoji: "🤖",
+    color: "#2a1a10",
+    accent: "#ff6a1a",
+    category: "3Dモデル",
+    level: "初級",
+    duration: "10分",
+    tags: ["3D", "WebGL", "ロボット", "ヒューマノイド", "モーション", "Claude"],
+    date: "2026-11-13"
+  },
   {
     id: "octopus-guidebook",
     title: "再現ガイドブック：参考画像1枚から分解できる3Dロボットを作る",

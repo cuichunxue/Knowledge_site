@@ -18,6 +18,8 @@ materials/<id>/index.html   各資料本体
 | 1 | [AIで「分解できる3D機械生物」を作る](materials/cutaway-3d/index.html) | AI活用 | 初級 |
 | 2 | [Glass-Dome Octopus — 参考画像1枚から作る3Dロボットタコ](materials/glass-dome-octopus/index.html)（STEP 4：分解・再組み立てできる版） | AI活用 | 初級 |
 | 3 | [再現ガイドブック：参考画像1枚から分解できる3Dロボットを作る](materials/octopus-guidebook/index.html)（本文：`materials/glass-dome-octopus/GUIDEBOOK.md`） | AI活用 | 中級 |
+| 4 | [RAIJIN X1 — ヒューマノイドロボットの3D設計モデル](materials/raijin-x1/index.html) | 3Dモデル | 初級 |
+| 5 | [RAIJIN GPR-V4 — V4レーシングバイクの3D設計モデル](materials/raijin-gpr-v4/index.html) | 3Dモデル | 初級 |
 
 ## 使い方
 

@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAIJIN X1 ロボット設計</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* One world: a night-shift robotics hangar. Stage on top (or left), control deck below (or right). */
+  --bg:#0d1420; --deck:#131c2b; --raise:#1b2638; --line:#2a3850;
+  --ink:#e9eef6; --mute:#8d9bb2;
+  --accent:#ff6a1a; --sense:#4fe3ff;
+  --display:"Chakra Petch","Zen Kaku Gothic New",system-ui,sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.6;overflow:hidden;-webkit-text-size-adjust:100%}
+#app{height:100%;display:grid;grid-template-rows:minmax(0,54fr) minmax(0,46fr)}
+#stage{position:relative;min-height:0;overflow:hidden}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.hud{position:absolute;pointer-events:none}
+#title{left:16px;top:12px}
+#title h1{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:.06em;line-height:1.1}
+#title h1 span{color:var(--accent)}
+#title p{color:var(--mute);font-size:11px;letter-spacing:.08em}
+#modes{right:12px;top:12px;pointer-events:auto;display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:rgba(13,20,32,.7)}
+#modes button{padding:7px 11px;font-size:12px;border-right:1px solid var(--line)}
+#modes button:last-child{border-right:0}
+#read{left:16px;bottom:10px;font-family:var(--display);font-variant-numeric:tabular-nums;display:flex;gap:16px;align-items:baseline}
+#read b{font-size:20px;font-weight:600}
+#read small{color:var(--mute);font-size:11px;margin-left:3px;font-family:var(--body)}
+#hint{right:12px;bottom:12px;color:var(--mute);font-size:11px}
+button{font:inherit;color:var(--ink);background:none;border:0;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--sense);outline-offset:2px}
+button[aria-pressed="true"],button[aria-selected="true"]{background:var(--accent);color:#14100c;font-weight:700}
+#deck{background:var(--deck);border-top:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#tabs{display:flex;border-bottom:1px solid var(--line);flex:none}
+#tabs button{flex:1;padding:10px 4px;font-weight:500;color:var(--mute);border-bottom:2px solid transparent}
+#tabs button[aria-selected="true"]{background:none;color:var(--ink);border-bottom-color:var(--accent)}
+.pane{flex:1;min-height:0;overflow-y:auto;padding:14px 16px 20px;display:none;flex-direction:column;gap:14px}
+.pane.on{display:flex}
+h2{font-size:12px;font-weight:700;color:var(--mute);letter-spacing:.1em}
+.row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.row button{background:var(--raise);border:1px solid var(--line);border-radius:8px;padding:11px 4px;font-weight:700}
+.row button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#14100c}
+.ghost[aria-pressed="true"]{border-color:var(--accent)}
+.row button small{display:block;font-family:var(--display);font-weight:500;font-size:10px;letter-spacing:.1em;opacity:.7}
+.ctl{display:flex;align-items:center;gap:12px}
+.ctl label{color:var(--mute);font-size:12px;flex:none}
+.ctl input[type=range]{flex:1;accent-color:var(--accent);min-width:0}
+.ctl output{font-family:var(--display);width:44px;text-align:right;font-variant-numeric:tabular-nums}
+.ghost{border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12px}
+.note{color:var(--mute);font-size:12px}
+.cat{display:flex;flex-direction:column;gap:6px}
+.comp{width:100%;text-align:left;background:var(--raise);border:1px solid var(--line);border-radius:8px;padding:9px 12px;display:block}
+.comp .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.comp .nm{font-weight:700}
+.comp .loc{color:var(--mute);font-size:11px;flex:none}
+.comp ul{display:none;margin:6px 0 2px;padding-left:1.1em;font-size:12.5px;color:#c6d0df;font-weight:400}
+.comp[aria-pressed="true"]{background:#2a1c12;color:var(--ink);border-color:var(--accent);font-weight:400}
+.comp[aria-pressed="true"] ul{display:block}
+.stack{display:flex;flex-direction:column;gap:6px}
+.layer{border:1px solid var(--line);border-left:4px solid var(--c);border-radius:8px;background:var(--raise);padding:9px 12px;display:grid;grid-template-columns:1fr auto;gap:2px 10px}
+.layer b{font-weight:700}
+.layer i{font-style:normal;font-family:var(--display);color:var(--c);font-size:12px;font-variant-numeric:tabular-nums}
+.layer p{grid-column:1/-1;font-size:12.5px;color:#c6d0df}
+.flow{text-align:center;color:var(--mute);font-size:11px;letter-spacing:.1em}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td{padding:7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--mute);width:42%}
+td:last-child{font-variant-numeric:tabular-nums}
+#err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:24px;text-align:center;color:var(--mute)}
+@media (min-width:900px){
+  #app{grid-template-rows:none;grid-template-columns:minmax(0,1fr) 400px}
+  #deck{border-top:0;border-left:1px solid var(--line)}
+  #title h1{font-size:30px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <section id="stage" aria-label="3Dビュー">
+    <canvas id="gl"></canvas>
+    <div id="err">この端末では3D表示（WebGL2）を利用できません。別のブラウザでお試しください。</div>
+    <div class="hud" id="title"><h1>RAIJIN <span>X1</span></h1><p>汎用ヒューマノイド 設計モデル</p></div>
+    <div class="hud" id="modes" role="group" aria-label="表示モード">
+      <button data-mode="shell" aria-pressed="true">外装</button><button data-mode="xray" aria-pressed="false">透視</button><button data-mode="core" aria-pressed="false">内部</button>
+    </div>
+    <div class="hud" id="read"><span><b id="rMotion">走行</b></span><span><b id="rSpeed">0.0</b><small>km/h</small></span></div>
+    <div class="hud" id="hint">ドラッグで回転・ピンチで拡大</div>
+  </section>
+  <section id="deck">
+    <div id="tabs" role="tablist">
+      <button role="tab" data-tab="motion" aria-selected="true">モーション</button>
+      <button role="tab" data-tab="parts" aria-selected="false">部品</button>
+      <button role="tab" data-tab="ai" aria-selected="false">知能</button>
+      <button role="tab" data-tab="spec" aria-selected="false">仕様</button>
+    </div>
+    <div class="pane on" id="p-motion">
+      <div class="row" id="motions"></div>
+      <div class="ctl"><label for="spd">再生速度</label><input id="spd" type="range" min="0.1" max="1.5" step="0.05" value="1"><output id="spdOut" for="spd">1.00×</output></div>
+      <div class="ctl"><button class="ghost" id="pause" aria-pressed="false">一時停止</button><button class="ghost" id="spin" aria-pressed="false">カメラ自動回転</button><button class="ghost" id="reset">視点を戻す</button></div>
+      <p class="note">走行は約10 km/h、ダンスは120 BPM・16拍のループです。同じ動きがGLBファイルにクリップとして入っています。</p>
+    </div>
+    <div class="pane" id="p-parts"></div>
+    <div class="pane" id="p-ai">
+      <p class="note">三層の頭脳が別々の速さで動きます。上の層ほどゆっくり深く考え、下の層ほど速く反射します。</p>
+      <div class="stack">
+        <div class="flow">センサー（カメラ・LiDAR・音・力・触覚）</div>
+        <div class="layer" style="--c:#4fe3ff"><b>知覚フュージョン</b><i>120 Hz</i><p>全センサーを1つの3D空間にまとめ、人・物・床・自分の体の状態を把握する。</p></div>
+        <div class="flow">▼</div>
+        <div class="layer" style="--c:#c69bff"><b>第3層 思考（System 2）</b><i>1〜10 Hz</i><p>言語・視覚・音声を扱う基盤モデル。指示を理解し、作業を手順に分解し、長期計画を立てる。</p></div>
+        <div class="layer" style="--c:#ff6a1a"><b>第2層 行動（System 1）</b><i>200 Hz</i><p>視覚・言語・行動(VLA)モデル。見た映像から全身と指の動きを直接つくる。模倣学習と強化学習で習得。</p></div>
+        <div class="layer" style="--c:#ffd24a"><b>第1層 反射（System 0）</b><i>1,000 Hz</i><p>全身制御。バランス、着地の衝撃吸収、押されたときの踏ん張り、転倒からの起き上がり。</p></div>
+        <div class="flow">▼ トルク指令 20 kHz ▼</div>
+        <div class="flow">アクチュエータ 78自由度</div>
+      </div>
+      <h2>全層を支える機能</h2>
+      <div class="duo">
+        <div class="layer" style="--c:#7fe08a"><b>世界モデル</b><p>動く前に結果を頭の中で試し、失敗しそうな動作を避ける。</p></div>
+        <div class="layer" style="--c:#7fe08a"><b>記憶</b><p>場所の3D地図、出来事、覚えた技能を蓄積して再利用。</p></div>
+        <div class="layer" style="--c:#7fe08a"><b>フリート学習</b><p>充電中に全機の経験を共有し、1台の上達が全機に広がる。</p></div>
+        <div class="layer" style="--c:#ff5a5a"><b>安全監視</b><p>AIと別系統。人の停止指示と力・速度の上限が常に最優先。</p></div>
+      </div>
+    </div>
+    <div class="pane" id="p-spec">
+      <table>
+        <tr><td>全高／質量</td><td>175 cm／62 kg</td></tr>
+        <tr><td>自由度</td><td>78（ボディ34＋ハンド22×2）</td></tr>
+        <tr><td>最高速度</td><td>歩行 6 km/h／走行 12 km/h</td></tr>
+        <tr><td>可搬質量</td><td>両手 25 kg／片手 10 kg</td></tr>
+        <tr><td>稼働時間</td><td>約8時間（3.5 kWh）</td></tr>
+        <tr><td>計算性能</td><td>約4,000 TOPS・二重冗長</td></tr>
+        <tr><td>センサー</td><td>カメラ8、LiDAR、IMU 2、力覚4、触覚10、マイク6ch</td></tr>
+        <tr><td>3Dモデル</td><td id="mdl"></td></tr>
+        <tr><td>GLBクリップ</td><td>Idle／Walk／Run／Dance（30 fps）</td></tr>
+        <tr><td>座標系</td><td>メートル、+Y上、+Z正面</td></tr>
+      </table>
+      <p class="note">数値は動画・ゲーム用に考えた設定値で、実在の機体の性能ではありません。3Dモデルの指は片手10関節に簡略化しています。</p>
+    </div>
+  </section>
+</div>
+<script>// RAIJIN X1 — humanoid robot definition: skeleton, parts, components, motions.
+// Shared by the viewer (browser) and the GLB exporter (node).
+(function (g) {
+  'use strict';
+  const PI = Math.PI;
+  // ---------------------------------------------------------------- math
+  const qmul = (a, b) => [
+    a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
+    a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
+    a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
+    a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2]];
+  const qconj = q => [-q[0], -q[1], -q[2], q[3]];
+  const qax = (ax, an) => { const s = Math.sin(an / 2), c = Math.cos(an / 2); return ax === 0 ? [s, 0, 0, c] : ax === 1 ? [0, s, 0, c] : [0, 0, s, c]; };
+  const qrot = (q, v) => {
+    const x = q[0], y = q[1], z = q[2], w = q[3];
+    const ix = w * v[0] + y * v[2] - z * v[1], iy = w * v[1] + z * v[0] - x * v[2], iz = w * v[2] + x * v[1] - y * v[0], iw = -x * v[0] - y * v[1] - z * v[2];
+    return [ix * w - iw * x - iy * z + iz * y, iy * w - iw * y - iz * x + ix * z, iz * w - iw * z - ix * y + iy * x];
+  };
+  const X = a => qax(0, a), Y = a => qax(1, a), Z = a => qax(2, a);
+  const q3 = (a, b, c) => qmul(qmul(a, b), c);
+  const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+  const frac = x => x - Math.floor(x);
+  const sm = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+  const backOut = x => { x = clamp(x, 0, 1); const c = 1.9; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+
+  // ---------------------------------------------------------------- skeleton
+  const L1 = 0.42, L2 = 0.42, ANKLE_H = 0.09, BALL = 0.125, HEEL = 0.075, PELVIS_Y = 0.97, HIP_X = 0.095, HIP_Y = -0.04;
+  const JOINTS = [];
+  const JI = {};
+  const J = (name, parent, pos, rest) => { JI[name] = JOINTS.length; JOINTS.push({ name, parent: parent == null ? -1 : JI[parent], pos, rest: rest || [0, 0, 0, 1] }); };
+  J('Root', null, [0, 0, 0]);
+  J('Pelvis', 'Root', [0, PELVIS_Y, 0]);
+  J('Spine', 'Pelvis', [0, 0.10, 0]);
+  J('Neck', 'Spine', [0, 0.43, 0]);
+  J('Head', 'Neck', [0, 0.07, 0]);
+  const SIDES = [['L', 1], ['R', -1]];
+  const FING = [['Index', 0.03], ['Middle', 0.01], ['Ring', -0.01], ['Pinky', -0.03]];
+  for (const [s, m] of SIDES) {
+    J('UpperArm_' + s, 'Spine', [m * 0.215, 0.35, 0]);
+    J('LowerArm_' + s, 'UpperArm_' + s, [0, -0.29, 0]);
+    J('Hand_' + s, 'LowerArm_' + s, [0, -0.26, 0]);
+    for (const [f, z] of FING) {
+      J(f + '1_' + s, 'Hand_' + s, [0, -0.1, z]);
+      J(f + '2_' + s, f + '1_' + s, [0, -0.042, 0]);
+    }
+    J('Thumb1_' + s, 'Hand_' + s, [m * -0.006, -0.035, 0.036], qmul(X(-0.95), Z(m * -0.25)));
+    J('Thumb2_' + s, 'Thumb1_' + s, [0, -0.04, 0]);
+    J('UpperLeg_' + s, 'Pelvis', [m * HIP_X, HIP_Y, 0]);
+    J('LowerLeg_' + s, 'UpperLeg_' + s, [0, -L1, 0]);
+    J('Foot_' + s, 'LowerLeg_' + s, [0, -L2, 0]);
+    J('Toe_' + s, 'Foot_' + s, [0, -0.065, BALL]);
+  }
+
+  // ---------------------------------------------------------------- materials
+  const MATS = {
+    armor: { c: [0.86, 0.87, 0.89], m: 0.05, r: 0.26, e: 0 },
+    suit: { c: [0.035, 0.038, 0.046], m: 0.15, r: 0.62, e: 0 },
+    dark: { c: [0.075, 0.08, 0.095], m: 0.3, r: 0.55, e: 0 },
+    joint: { c: [0.20, 0.215, 0.245], m: 0.9, r: 0.3, e: 0 },
+    accent: { c: [1.0, 0.36, 0.05], m: 0.1, r: 0.4, e: 0.15 },
+    glow: { c: [0.25, 0.9, 1.0], m: 0, r: 0.5, e: 2.2 },
+    visor: { c: [0.015, 0.017, 0.022], m: 0.6, r: 0.08, e: 0 },
+    rubber: { c: [0.04, 0.04, 0.045], m: 0, r: 0.9, e: 0 },
+    titan: { c: [0.56, 0.57, 0.60], m: 0.95, r: 0.38, e: 0 },
+    steel: { c: [0.78, 0.80, 0.83], m: 1.0, r: 0.22, e: 0 },
+    copper: { c: [0.95, 0.50, 0.22], m: 1.0, r: 0.3, e: 0 },
+    pcb: { c: [0.03, 0.32, 0.20], m: 0.2, r: 0.5, e: 0 },
+    chip: { c: [0.93, 0.74, 0.25], m: 1.0, r: 0.25, e: 0.1 },
+    battery: { c: [0.10, 0.32, 0.85], m: 0.4, r: 0.4, e: 0.08 },
+    coolant: { c: [0.10, 0.85, 0.75], m: 0.2, r: 0.3, e: 0.5 },
+    sensor: { c: [0.75, 0.15, 0.85], m: 0.5, r: 0.25, e: 0.35 },
+    lidar: { c: [0.95, 0.15, 0.2], m: 0.5, r: 0.25, e: 0.5 },
+    comm: { c: [0.95, 0.85, 0.2], m: 0.5, r: 0.4, e: 0.25 },
+    safety: { c: [0.9, 0.1, 0.1], m: 0.3, r: 0.4, e: 0.4 },
+  };
+
+  // ---------------------------------------------------------------- parts
+  // shape: ['sq',a,b,c,e1,e2,tx,tz] | ['cyl',rTop,rBot,h] | ['cap',r,h] | ['tor',R,r]
+  const PARTS = [];
+  const P = (joint, layer, comp, mat, shape, pos, rot, seg) => PARTS.push({ joint: JI[joint], layer, comp, mat, shape, pos: pos || [0, 0, 0], rot: rot || [0, 0, 0], seg: seg || 1 });
+  const sq = (a, b, c, e1, e2, tx, tz) => ['sq', a, b, c, e1 == null ? 0.5 : e1, e2 == null ? 0.5 : e2, tx || 0, tz || 0];
+  const box = (a, b, c) => ['sq', a, b, c, 0.12, 0.12, 0, 0];
+  const sph = r => ['sq', r, r, r, 1, 1, 0, 0];
+  const cyl = (r, h, r2) => ['cyl', r2 == null ? r : r2, r, h];
+  const AX = [0, 0, 90]; // lay a Y-cylinder along X
+
+  const A = 'armor', S = 'suit', JT = 'joint';
+  // --- pelvis
+  P('Pelvis', 'shell', 'armor', S, sq(0.128, 0.072, 0.09, 0.6, 0.7), [0, 0, 0], null, 2);
+  P('Pelvis', 'shell', 'armor', A, sq(0.052, 0.05, 0.024, 0.5, 0.5, -0.35), [0, -0.008, 0.078]);
+  P('Pelvis', 'shell', 'armor', A, sq(0.085, 0.03, 0.026, 0.5, 0.5, 0.1), [0, 0.04, -0.072]);
+  P('Pelvis', 'shell', 'armor', 'accent', box(0.022, 0.003, 0.004), [0, 0.028, 0.1015]);
+  P('Pelvis', 'frame', 'skeleton', 'titan', box(0.11, 0.022, 0.04), [0, -0.035, 0]);
+  P('Pelvis', 'frame', 'rot', JT, cyl(0.076, 0.035), [0, 0.085, 0], null, 2);
+  P('Pelvis', 'core', 'rot', 'copper', ['tor', 0.077, 0.006], [0, 0.085, 0]);
+  P('Pelvis', 'core', 'cerebellum', 'pcb', box(0.085, 0.006, 0.055), [0, 0.035, -0.012]);
+  P('Pelvis', 'core', 'cerebellum', 'chip', box(0.018, 0.005, 0.018), [-0.035, 0.044, -0.012]);
+  P('Pelvis', 'core', 'cerebellum', 'chip', box(0.018, 0.005, 0.018), [0.035, 0.044, -0.012]);
+  P('Pelvis', 'core', 'cerebellum', 'steel', box(0.012, 0.007, 0.03), [0, 0.045, -0.012]);
+  P('Pelvis', 'core', 'imu', 'sensor', box(0.016, 0.012, 0.016), [0, 0.008, 0.035]);
+  for (const [s, m] of SIDES) {
+    P('Pelvis', 'shell', 'armor', A, sq(0.024, 0.05, 0.06, 0.6, 0.7), [m * 0.142, -0.005, 0]);
+    P('Pelvis', 'frame', 'rot', JT, cyl(0.052, 0.07), [m * 0.1, HIP_Y, 0], AX, 2);
+    P('Pelvis', 'core', 'rot', 'copper', ['tor', 0.054, 0.006], [m * 0.1, HIP_Y, 0], AX);
+  }
+  // --- torso
+  P('Spine', 'shell', 'armor', S, sq(0.098, 0.09, 0.074, 0.7, 0.8), [0, 0.055, 0], null, 2);
+  P('Spine', 'shell', 'armor', S, sq(0.148, 0.14, 0.098, 0.6, 0.7, 0.24, 0.08), [0, 0.27, -0.004], null, 3);
+  P('Spine', 'shell', 'armor', A, sq(0.15, 0.085, 0.05, 0.45, 0.6, 0.18), [0, 0.325, 0.066], null, 3);
+  P('Spine', 'shell', 'armor', A, sq(0.135, 0.1, 0.04, 0.45, 0.55, 0.2), [0, 0.3, -0.078], null, 2);
+  P('Spine', 'shell', 'cooling', S, sq(0.07, 0.085, 0.03, 0.4, 0.5), [0, 0.185, -0.082]);
+  for (let i = 0; i < 5; i++) P('Spine', 'shell', 'cooling', JT, box(0.055, 0.004, 0.006), [0, 0.13 + i * 0.027, -0.114]);
+  P('Spine', 'frame', 'visor', 'glow', box(0.034, 0.0035, 0.004), [0, 0.335, 0.1135]);
+  P('Spine', 'shell', 'armor', S, ['tor', 0.055, 0.014], [0, 0.418, 0], null, 2);
+  P('Spine', 'frame', 'skeleton', 'titan', cyl(0.02, 0.40), [0, 0.2, -0.05]);
+  P('Spine', 'frame', 'skeleton', 'titan', box(0.18, 0.016, 0.022), [0, 0.35, -0.02]);
+  P('Spine', 'frame', 'skeleton', 'titan', box(0.085, 0.012, 0.03), [0, 0.02, -0.02]);
+  for (const [s, m] of SIDES) {
+    P('Spine', 'shell', 'armor', A, sq(0.058, 0.05, 0.022, 0.5, 0.6, 0.15), [m * 0.066, 0.2, 0.08], [10, m * -14, 0], 2);
+    P('Spine', 'shell', 'armor', A, sq(0.036, 0.034, 0.014, 0.5, 0.6, -0.15), [m * 0.04, 0.078, 0.064], [6, 0, 0]);
+    P('Spine', 'shell', 'armor', A, sq(0.05, 0.018, 0.05, 0.6, 0.7), [m * 0.105, 0.403, -0.012], [0, 0, m * -18]);
+    P('Spine', 'shell', 'armor', 'accent', box(0.003, 0.022, 0.003), [m * 0.118, 0.325, 0.101], [0, 0, m * 24]);
+    P('Spine', 'frame', 'rot', JT, cyl(0.05, 0.05), [m * 0.182, 0.35, 0], AX, 2);
+    P('Spine', 'core', 'cams', 'sensor', cyl(0.011, 0.014), [m * 0.085, 0.365, 0.098], [90, 0, 0]);
+    P('Spine', 'core', 'cooling', 'coolant', cyl(0.006, 0.2), [m * 0.095, 0.24, -0.055]);
+    P('Spine', 'core', 'cooling', 'coolant', cyl(0.006, 0.1), [m * 0.095, 0.34, -0.005], [90, 0, 0]);
+    P('Spine', 'core', 'brain', 'chip', box(0.024, 0.024, 0.005), [m * 0.045, 0.3, 0.05]);
+    P('Spine', 'core', 'brain', 'steel', box(0.03, 0.03, 0.012), [m * 0.045, 0.3, 0.066]);
+    P('Spine', 'core', 'battery', 'copper', cyl(0.008, 0.02), [m * 0.07, 0.262, 0.0]);
+  }
+  P('Spine', 'core', 'brain', 'pcb', box(0.105, 0.062, 0.005), [0, 0.3, 0.042]);
+  P('Spine', 'core', 'brain', 'chip', box(0.012, 0.03, 0.004), [0, 0.3, 0.05]);
+  P('Spine', 'core', 'battery', 'battery', sq(0.1, 0.088, 0.042, 0.25, 0.3), [0, 0.165, 0.0], null, 2);
+  for (let i = 0; i < 4; i++) P('Spine', 'core', 'battery', 'steel', box(0.102, 0.003, 0.044), [0, 0.105 + i * 0.04, 0.0]);
+  P('Spine', 'core', 'pdu', 'pcb', box(0.06, 0.016, 0.035), [0, 0.045, 0.01]);
+  P('Spine', 'core', 'pdu', 'copper', box(0.045, 0.006, 0.01), [0, 0.066, 0.01]);
+  P('Spine', 'core', 'cooling', 'steel', box(0.075, 0.07, 0.007), [0, 0.25, -0.09]);
+  P('Spine', 'core', 'cooling', 'coolant', cyl(0.022, 0.03), [0, 0.375, -0.05], AX);
+  P('Spine', 'core', 'comm', 'comm', box(0.028, 0.014, 0.02), [-0.08, 0.385, -0.03]);
+  P('Spine', 'core', 'comm', 'comm', cyl(0.003, 0.05), [-0.105, 0.39, -0.03]);
+  P('Spine', 'core', 'safety', 'safety', box(0.02, 0.014, 0.016), [0.08, 0.385, -0.03]);
+  // --- neck & head
+  P('Neck', 'frame', 'rot', JT, cyl(0.033, 0.09), [0, 0.025, 0]);
+  P('Neck', 'frame', 'rot', S, ['tor', 0.034, 0.006], [0, 0.045, 0]);
+  P('Neck', 'core', 'rot', 'copper', ['tor', 0.034, 0.005], [0, 0.02, 0]);
+  P('Head', 'shell', 'armor', A, sq(0.078, 0.105, 0.092, 0.85, 0.9, 0.05, 0.03), [0, 0.082, -0.01], null, 3);
+  P('Head', 'shell', 'visor', 'visor', sq(0.064, 0.074, 0.05, 0.7, 0.75, 0.08), [0, 0.076, 0.05], null, 3);
+  P('Head', 'frame', 'visor', 'glow', sq(0.04, 0.0042, 0.005, 0.4, 0.8), [0, 0.096, 0.0975]);
+  P('Head', 'shell', 'lidar', S, sq(0.01, 0.013, 0.055, 0.5, 0.5), [0, 0.187, -0.03]);
+  P('Head', 'shell', 'armor', 'accent', box(0.0025, 0.003, 0.04), [0, 0.2, -0.03]);
+  P('Head', 'frame', 'skeleton', 'titan', sq(0.055, 0.07, 0.058, 0.8, 0.8), [0, 0.07, -0.012]);
+  P('Head', 'core', 'lidar', 'lidar', cyl(0.022, 0.018), [0, 0.158, -0.01]);
+  P('Head', 'core', 'imu', 'sensor', box(0.012, 0.01, 0.012), [0, 0.135, -0.035]);
+  P('Head', 'core', 'audio', 'comm', cyl(0.018, 0.012), [0, 0.015, 0.058], [90, 0, 0]);
+  for (const [s, m] of SIDES) {
+    P('Head', 'shell', 'audio', JT, cyl(0.026, 0.016), [m * 0.078, 0.08, -0.008], AX);
+    P('Head', 'shell', 'armor', 'accent', ['tor', 0.018, 0.003], [m * 0.0865, 0.08, -0.008], AX);
+    P('Head', 'core', 'cams', 'sensor', cyl(0.012, 0.02), [m * 0.03, 0.096, 0.075], [90, 0, 0]);
+    P('Head', 'core', 'cams', 'sensor', cyl(0.009, 0.016), [m * 0.05, 0.06, 0.07], [90, m * 25, 0]);
+    P('Head', 'core', 'audio', 'comm', sph(0.007), [m * 0.063, 0.13, 0.02]);
+    P('Head', 'core', 'audio', 'comm', sph(0.007), [m * 0.063, 0.13, -0.05]);
+  }
+  // --- arms & legs
+  for (const [s, m] of SIDES) {
+    const UA = 'UpperArm_' + s, LA = 'LowerArm_' + s, H = 'Hand_' + s;
+    P(UA, 'shell', 'armor', A, sq(0.056, 0.056, 0.06, 0.9, 0.9), [m * 0.01, 0.006, 0], null, 2);
+    P(UA, 'shell', 'armor', S, sq(0.039, 0.115, 0.042, 0.7, 0.85, 0.1, 0.08), [0, -0.155, 0], null, 2);
+    P(UA, 'shell', 'armor', A, sq(0.034, 0.09, 0.045, 0.55, 0.8, 0.12, 0.06), [m * 0.011, -0.15, 0.003], null, 2);
+    P(UA, 'shell', 'armor', 'accent', box(0.002, 0.035, 0.003), [m * 0.046, -0.125, 0]);
+    P(UA, 'frame', 'skeleton', 'titan', cyl(0.02, 0.27), [0, -0.145, 0]);
+    P(UA, 'frame', 'rot', JT, cyl(0.046, 0.058), [0, 0, 0], AX, 2);
+    P(UA, 'frame', 'rot', JT, cyl(0.036, 0.07), [0, -0.29, 0], AX, 2);
+    P(UA, 'core', 'rot', 'copper', ['tor', 0.037, 0.005], [0, -0.29, 0], AX);
+    P(UA, 'core', 'rot', 'copper', ['tor', 0.047, 0.005], [0, 0, 0], AX);
+    P(UA, 'core', 'rot', 'steel', cyl(0.026, 0.06), [0, -0.1, 0]);
+    P(UA, 'core', 'rot', 'copper', ['tor', 0.027, 0.004], [0, -0.1, 0]);
+    P(LA, 'shell', 'armor', S, sq(0.034, 0.11, 0.036, 0.7, 0.85, 0.22, 0.18), [0, -0.13, 0], null, 2);
+    P(LA, 'shell', 'armor', A, sq(0.032, 0.082, 0.04, 0.55, 0.8, 0.2, 0.14), [m * 0.008, -0.115, 0.003], null, 2);
+    P(LA, 'shell', 'armor', S, cyl(0.03, 0.026), [0, -0.243, 0]);
+    P(LA, 'shell', 'armor', 'accent', ['tor', 0.0305, 0.0025], [0, -0.226, 0]);
+    P(LA, 'shell', 'cams', 'sensor', cyl(0.006, 0.008), [m * 0.03, -0.2, 0.012], AX);
+    P(LA, 'frame', 'skeleton', 'titan', cyl(0.016, 0.22), [0, -0.13, 0]);
+    for (let i = 0; i < 6; i++) { const a = i / 6 * 2 * PI; P(LA, 'core', 'hand', 'copper', cyl(0.008, 0.07), [Math.cos(a) * 0.024, -0.085, Math.sin(a) * 0.024], null, 0.6); }
+    for (let i = 0; i < 6; i++) { const a = i / 6 * 2 * PI; P(LA, 'core', 'hand', 'steel', cyl(0.002, 0.1), [Math.cos(a) * 0.019, -0.18, Math.sin(a) * 0.019], null, 0.4); }
+    P(LA, 'core', 'ft', 'sensor', cyl(0.026, 0.01), [0, -0.255, 0]);
+    P(H, 'frame', 'hand', S, sq(0.014, 0.048, 0.04, 0.5, 0.6), [0, -0.052, 0]);
+    P(H, 'shell', 'armor', A, sq(0.007, 0.036, 0.033, 0.5, 0.6), [m * 0.014, -0.05, 0]);
+    P(H, 'frame', 'hand', JT, sph(0.022), [0, 0, 0]);
+    for (const [f, z] of FING) {
+      P(f + '1_' + s, 'frame', 'hand', JT, ['cap', 0.0085, 0.034], [0, -0.02, 0], null, 0.6);
+      P(f + '2_' + s, 'frame', 'hand', S, ['cap', 0.0078, 0.03], [0, -0.018, 0], null, 0.6);
+      P(f + '2_' + s, 'core', 'tactile', 'glow', sph(0.0062), [m * -0.004, -0.036, 0], null, 0.6);
+    }
+    P('Thumb1_' + s, 'frame', 'hand', JT, ['cap', 0.0092, 0.03], [0, -0.018, 0], null, 0.6);
+    P('Thumb2_' + s, 'frame', 'hand', S, ['cap', 0.0088, 0.026], [0, -0.016, 0], null, 0.6);
+    P('Thumb2_' + s, 'core', 'tactile', 'glow', sph(0.0068), [0, -0.032, -0.003], null, 0.6);
+
+    const UL = 'UpperLeg_' + s, LL = 'LowerLeg_' + s, F = 'Foot_' + s, T = 'Toe_' + s;
+    P(UL, 'shell', 'armor', S, sq(0.064, 0.19, 0.072, 0.7, 0.85, 0.16, 0.12), [0, -0.2, 0], null, 3);
+    P(UL, 'shell', 'armor', A, sq(0.054, 0.15, 0.035, 0.5, 0.65, 0.14), [m * 0.006, -0.2, 0.05], null, 2);
+    P(UL, 'shell', 'armor', A, sq(0.024, 0.14, 0.056, 0.5, 0.7, 0.1, 0.1), [m * 0.052, -0.2, -0.004], null, 2);
+    P(UL, 'shell', 'armor', 'accent', box(0.002, 0.05, 0.003), [m * 0.0765, -0.17, 0]);
+    P(UL, 'frame', 'skeleton', S, sph(0.058), [0, 0, 0], null, 2);
+    P(UL, 'frame', 'skeleton', 'titan', cyl(0.026, 0.38), [0, -0.21, -0.01]);
+    P(UL, 'frame', 'rot', JT, cyl(0.045, 0.1), [0, -L1, 0], AX, 2);
+    P(UL, 'core', 'rot', 'copper', ['tor', 0.046, 0.005], [m * 0.028, -L1, 0], AX);
+    P(UL, 'core', 'rot', 'copper', ['tor', 0.046, 0.005], [m * -0.028, -L1, 0], AX);
+    P(UL, 'core', 'lin', 'steel', cyl(0.018, 0.26), [0, -0.21, 0.032]);
+    P(UL, 'core', 'lin', 'copper', cyl(0.026, 0.07), [0, -0.085, 0.032]);
+    P(UL, 'core', 'lin', 'steel', cyl(0.008, 0.1), [0, -0.37, 0.032]);
+    P(LL, 'shell', 'armor', S, sq(0.048, 0.19, 0.056, 0.7, 0.85, 0.22, 0.2), [0, -0.215, -0.004], null, 3);
+    P(LL, 'shell', 'armor', S, sq(0.04, 0.1, 0.035, 0.7, 0.8), [0, -0.15, -0.035]);
+    P(LL, 'shell', 'armor', A, sq(0.042, 0.16, 0.03, 0.5, 0.65, 0.2), [0, -0.225, 0.034], null, 2);
+    P(LL, 'shell', 'armor', A, sq(0.038, 0.045, 0.024, 0.6, 0.7), [0, -0.005, 0.048]);
+    P(LL, 'shell', 'armor', A, sq(0.036, 0.08, 0.022, 0.6, 0.7), [0, -0.15, -0.058]);
+    P(LL, 'frame', 'skeleton', 'titan', cyl(0.02, 0.38), [0, -0.21, 0.006]);
+    P(LL, 'frame', 'rot', JT, cyl(0.03, 0.08), [0, -L2, 0], AX, 2);
+    for (const k of [-1, 1]) {
+      P(LL, 'core', 'lin', 'steel', cyl(0.011, 0.22), [k * 0.021, -0.2, -0.026]);
+      P(LL, 'core', 'lin', 'copper', cyl(0.016, 0.06), [k * 0.021, -0.1, -0.026]);
+      P(LL, 'core', 'lin', 'steel', cyl(0.005, 0.1), [k * 0.021, -0.35, -0.026]);
+    }
+    P(F, 'shell', 'armor', S, sph(0.04), [0, 0, 0]);
+    P(F, 'shell', 'armor', A, sq(0.046, 0.027, 0.096, 0.55, 0.6), [0, -0.05, 0.024], null, 2);
+    P(F, 'shell', 'armor', 'rubber', sq(0.048, 0.011, 0.099, 0.3, 0.6), [0, -0.079, 0.024]);
+    P(F, 'shell', 'armor', 'accent', box(0.026, 0.003, 0.003), [0, -0.042, -0.0725]);
+    P(F, 'core', 'ft', 'sensor', cyl(0.032, 0.01), [0, -0.045, 0]);
+    P(T, 'shell', 'armor', A, sq(0.046, 0.019, 0.04, 0.5, 0.7), [0, 0.0, 0.036]);
+    P(T, 'shell', 'armor', 'rubber', sq(0.048, 0.008, 0.041, 0.3, 0.7), [0, -0.017, 0.036]);
+    P(T, 'frame', 'rot', JT, cyl(0.013, 0.085), [0, 0, 0], AX);
+  }
+
+  // ---------------------------------------------------------------- geometry
+  function shapeGeom(shape, seg) {
+    const pos = [], nrm = [], idx = [];
+    const grid = (nu, nv, f) => {
+      const base = pos.length / 3;
+      for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) { const r = f(i / nu, j / nv); pos.push(r[0], r[1], r[2]); const l = Math.hypot(r[3], r[4], r[5]) || 1; nrm.push(r[3] / l, r[4] / l, r[5] / l); }
+      for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const a = base + j * (nu + 1) + i, b = a + nu + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+    };
+    const sp = (w, e) => { const s = Math.sin(w); return Math.sign(s) * Math.pow(Math.abs(s), e); };
+    const cp = (w, e) => { const c = Math.cos(w); return Math.sign(c) * Math.pow(Math.abs(c), e); };
+    const t = shape[0];
+    if (t === 'sq') {
+      const [, a, b, c, e1, e2, tx, tz] = shape;
+      const nu = Math.max(8, Math.round(20 * seg)), nv = Math.max(6, Math.round(12 * seg));
+      grid(nu, nv, (u, v) => {
+        const U = -PI + 2 * PI * u, V = -PI / 2 + PI * v;
+        let cv = cp(V, e1), sv = sp(V, e1); if (v === 0 || v === 1) cv = 0;
+        const ty = sv; const kx = 1 + tx * ty, kz = 1 + tz * ty;
+        const cv2 = (v === 0 || v === 1) ? 0 : cp(V, 2 - e1);
+        return [a * cv * cp(U, e2) * kx, b * sv, c * cv * sp(U, e2) * kz,
+          cv2 * cp(U, 2 - e2) / (a * kx), sp(V, 2 - e1) / b, cv2 * sp(U, 2 - e2) / (c * kz)];
+      });
+    } else if (t === 'cyl') {
+      const [, rt, rb, h] = shape; const n = Math.max(8, Math.round(18 * seg));
+      grid(n, 1, (u, v) => { const U = 2 * PI * u, r = rb + (rt - rb) * v; return [r * Math.cos(U), (v - 0.5) * h, r * Math.sin(U), Math.cos(U), (rb - rt) / h, Math.sin(U)]; });
+      for (const top of [1, 0]) {
+        const base = pos.length / 3, r = top ? rt : rb, y = top ? h / 2 : -h / 2;
+        pos.push(0, y, 0); nrm.push(0, top ? 1 : -1, 0);
+        for (let i = 0; i <= n; i++) { const U = 2 * PI * i / n; pos.push(r * Math.cos(U), y, r * Math.sin(U)); nrm.push(0, top ? 1 : -1, 0); }
+        for (let i = 0; i < n; i++) top ? idx.push(base, base + 2 + i, base + 1 + i) : idx.push(base, base + 1 + i, base + 2 + i);
+      }
+    } else if (t === 'cap') {
+      const [, r, h] = shape; const nu = Math.max(8, Math.round(14 * seg)), nv = 8;
+      grid(nu, nv + 1, (u, v) => {
+        const U = 2 * PI * u; let j = Math.round(v * (nv + 1)); const up = j > nv / 2; if (up) j -= 1;
+        const V = -PI / 2 + PI * j / nv; const c = (j === 0 || j === nv) ? 0 : Math.cos(V), s = Math.sin(V);
+        return [r * c * Math.cos(U), r * s + (up ? h / 2 : -h / 2), r * c * Math.sin(U), c * Math.cos(U), s, c * Math.sin(U)];
+      });
+    } else if (t === 'tor') {
+      const [, Rr, r] = shape; const nu = Math.max(12, Math.round(24 * seg)), nv = 8;
+      grid(nu, nv, (u, v) => { const U = 2 * PI * u, V = 2 * PI * v; const c = Math.cos(V), s = Math.sin(V); return [(Rr + r * c) * Math.cos(U), r * s, (Rr + r * c) * Math.sin(U), c * Math.cos(U), s, c * Math.sin(U)]; });
+    }
+    return { pos, nrm, idx };
+  }
+  const D2R = PI / 180;
+  // Geometry of one part, baked into its joint's local space.
+  function partGeom(p) {
+    const g0 = shapeGeom(p.shape, p.seg);
+    const q = q3(Z(p.rot[2] * D2R), Y(p.rot[1] * D2R), X(p.rot[0] * D2R));
+    const n = g0.pos.length / 3;
+    for (let i = 0; i < n; i++) {
+      const v = qrot(q, [g0.pos[i * 3], g0.pos[i * 3 + 1], g0.pos[i * 3 + 2]]);
+      const w = qrot(q, [g0.nrm[i * 3], g0.nrm[i * 3 + 1], g0.nrm[i * 3 + 2]]);
+      g0.pos[i * 3] = v[0] + p.pos[0]; g0.pos[i * 3 + 1] = v[1] + p.pos[1]; g0.pos[i * 3 + 2] = v[2] + p.pos[2];
+      g0.nrm[i * 3] = w[0]; g0.nrm[i * 3 + 1] = w[1]; g0.nrm[i * 3 + 2] = w[2];
+    }
+    return g0;
+  }
+
+  // ---------------------------------------------------------------- pose
+  const KEYS = ['rootYaw', 'px', 'py', 'pz', 'prx', 'pry', 'prz', 'wx', 'wy', 'wz', 'nx', 'ny', 'nz'];
+  for (const s of ['L', 'R']) for (const k of ['sx', 'sy', 'sz', 'el', 'fy', 'hx', 'hz', 'grip', 'fx', 'fz', 'fc', 'fp', 'fw', 'toe']) KEYS.push(k + s);
+  function base(o) {
+    const p = {}; for (const k of KEYS) p[k] = 0;
+    p.py = -0.02; for (const s of ['L', 'R']) { p['sz' + s] = 0.09; p['el' + s] = 0.25; p['grip' + s] = 0.3; p['toe' + s] = 1; }
+    if (o) for (const k in o) { if (k in p) p[k] = o[k]; else { p[k + 'L'] = o[k]; p[k + 'R'] = o[k]; } }
+    return p;
+  }
+  const lerpP = (a, b, t) => { const p = {}; for (const k of KEYS) p[k] = a[k] + (b[k] - a[k]) * t; return p; };
+  const NEG = { px: 1, prz: 1, pry: 1, wy: 1, wz: 1, ny: 1, nz: 1 };
+  function mirrorP(a) {
+    const p = {}; for (const k of KEYS) {
+      const last = k[k.length - 1];
+      if (k !== 'rootYaw' && (last === 'L' || last === 'R')) p[k.slice(0, -1) + (last === 'L' ? 'R' : 'L')] = a[k];
+      else p[k] = NEG[k] ? -a[k] : a[k];
+    } return p;
+  }
+
+  // pose params -> local joint transforms {q:[...per joint], pelvis:[x,y,z]}
+  function solve(p) {
+    const q = JOINTS.map(j => j.rest);
+    const set = (n, v) => { q[JI[n]] = qmul(JOINTS[JI[n]].rest, v); };
+    set('Root', Y(p.rootYaw));
+    const pel = [p.px, PELVIS_Y + p.py, p.pz];
+    const qp = q3(Y(p.pry), X(p.prx), Z(p.prz));
+    set('Pelvis', qp);
+    set('Spine', q3(Y(p.wy), X(p.wx), Z(p.wz)));
+    set('Neck', Y(p.ny)); set('Head', qmul(X(p.nx), Z(p.nz)));
+    for (const [s, m] of SIDES) {
+      const v = k => p[k + s];
+      set('UpperArm_' + s, q3(Z(m * v('sz')), X(v('sx')), Y(m * v('sy'))));
+      set('LowerArm_' + s, X(-v('el')));
+      set('Hand_' + s, q3(Y(m * v('fy')), X(v('hx')), Z(m * v('hz'))));
+      const gr = v('grip');
+      for (const [f] of FING) { set(f + '1_' + s, Z(m * -gr * 1.35)); set(f + '2_' + s, Z(m * -gr * 1.3)); }
+      set('Thumb1_' + s, Z(m * -gr * 0.5)); set('Thumb2_' + s, Z(m * -gr * 0.9));
+      // leg IK
+      const th = v('fp'), c = v('fc');
+      let ay, az;
+      if (th >= 0) { ay = ANKLE_H * Math.cos(th) + BALL * Math.sin(th); az = BALL + ANKLE_H * Math.sin(th) - BALL * Math.cos(th); }
+      else { ay = ANKLE_H * Math.cos(th) - HEEL * Math.sin(th); az = -HEEL + ANKLE_H * Math.sin(th) + HEEL * Math.cos(th); }
+      const yaw = m * v('fw');
+      const off = qrot(Y(yaw), [0, 0, az]);
+      const ankle = [m * (HIP_X + 0.012 + v('fx')) + off[0], c + ay, v('fz') + off[2]];
+      const hipW = qrot(qp, [m * HIP_X, HIP_Y, 0]);
+      let d = qrot(qconj(qp), [ankle[0] - pel[0] - hipW[0], ankle[1] - pel[1] - hipW[1], ankle[2] - pel[2] - hipW[2]]);
+      const qFoot = qmul(qconj(qp), qmul(Y(yaw), X(th)));
+      // hip yaw follows the foot's yaw as seen from the pelvis
+      const fwd = qrot(qFoot, [0, 0, 1]); const hy = Math.atan2(fwd[0], fwd[2]);
+      d = qrot(Y(-hy), d);
+      const psi = Math.atan2(d[0], -d[1]); const dyp = Math.hypot(d[0], d[1]);
+      const D = clamp(Math.hypot(dyp, d[2]), 0.25, (L1 + L2) * 0.9995);
+      const phi = Math.atan2(d[2], dyp);
+      const al = Math.acos(clamp((L1 * L1 + D * D - L2 * L2) / (2 * L1 * D), -1, 1));
+      const kn = PI - Math.acos(clamp((L1 * L1 + L2 * L2 - D * D) / (2 * L1 * L2), -1, 1));
+      const qh = q3(Y(hy), Z(psi), X(-(phi + al)));
+      set('UpperLeg_' + s, qh); set('LowerLeg_' + s, X(kn));
+      set('Foot_' + s, qmul(qconj(qmul(qh, X(kn))), qFoot));
+      set('Toe_' + s, X(-clamp(Math.max(th, 0), 0, 1.0) * clamp(1 - c / 0.05, 0, 1) * v('toe')));
+    }
+    return { q, pelvis: pel };
+  }
+  // local transforms -> world {p,q} per joint
+  function world(tr) {
+    const out = [];
+    for (let i = 0; i < JOINTS.length; i++) {
+      const j = JOINTS[i]; const lp = i === JI.Pelvis ? tr.pelvis : j.pos;
+      if (j.parent < 0) out.push({ p: lp, q: tr.q[i] });
+      else { const P0 = out[j.parent]; const r = qrot(P0.q, lp); out.push({ p: [P0.p[0] + r[0], P0.p[1] + r[1], P0.p[2] + r[2]], q: qmul(P0.q, tr.q[i]) }); }
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------- motions
+  function crP(u, keys) { // periodic Catmull-Rom through [phase,value] keys
+    u = frac(u); const n = keys.length; let i = n - 1, uu = u;
+    if (u < keys[0][0]) { uu = u + 1; } else { for (let k = 0; k < n; k++) if (keys[k][0] <= u) i = k; }
+    const K = j => { const mI = ((j % n) + n) % n; return [keys[mI][0] + Math.floor(j / n), keys[mI][1]]; };
+    const p0 = K(i - 1), p1 = K(i), p2 = K(i + 1), p3 = K(i + 2);
+    const h = p2[0] - p1[0], t = (uu - p1[0]) / h, m1 = (p2[1] - p0[1]) / (p2[0] - p0[0]), m2 = (p3[1] - p1[1]) / (p3[0] - p1[0]);
+    const t2 = t * t, t3 = t2 * t;
+    return (2 * t3 - 3 * t2 + 1) * p1[1] + (t3 - 2 * t2 + t) * h * m1 + (-2 * t3 + 3 * t2) * p2[1] + (t3 - t2) * h * m2;
+  }
+  function lin(x, keys) { // clamped piecewise-smooth through [x,value]
+    if (x <= keys[0][0]) return keys[0][1];
+    for (let i = 1; i < keys.length; i++) if (x <= keys[i][0]) { const a = keys[i - 1], b = keys[i]; return a[1] + (b[1] - a[1]) * sm((x - a[0]) / (b[0] - a[0])); }
+    return keys[keys.length - 1][1];
+  }
+  function gaitFoot(u, d, zf, zb, lift, skew) {
+    if (u < d) return { z: zf + (zb - zf) * u / d, c: 0 };
+    const w = (u - d) / (1 - d), m = (zb - zf) / d * (1 - d), w2 = w * w, w3 = w2 * w;
+    return { z: (2 * w3 - 3 * w2 + 1) * zb + (w3 - 2 * w2 + w) * m + (-2 * w3 + 3 * w2) * zf + (w3 - w2) * m, c: lift * Math.pow(Math.sin(PI * Math.pow(w, skew)), 2) };
+  }
+
+  function idle(t) {
+    const a = 2 * PI * t / 6, p = base();
+    p.py = -0.022 + 0.004 * Math.sin(2 * a); p.px = 0.014 * Math.sin(a); p.prz = -0.012 * Math.sin(a);
+    p.wx = 0.012 * Math.sin(2 * a); p.wz = 0.012 * Math.sin(a); p.wy = 0.03 * Math.sin(a + 1);
+    p.ny = 0.32 * Math.sin(a) * Math.abs(Math.sin(a)); p.nx = 0.04 * Math.sin(2 * a + 1);
+    for (const [s, m] of SIDES) { p['sx' + s] = 0.03 * Math.sin(2 * a + m); p['el' + s] = 0.24 + 0.04 * Math.sin(2 * a + 1 + m); p['sz' + s] = 0.1 + 0.01 * Math.sin(2 * a); p['grip' + s] = 0.3 + 0.08 * Math.sin(a + m); p['fx' + s] = 0.012; }
+    return p;
+  }
+  const WALK = { T: 1.0, d: 0.6, zf: 0.33, zb: -0.33 };
+  function walk(t) {
+    const ph = t / WALK.T, c = Math.cos(2 * PI * ph), p = base();
+    for (const [s] of SIDES) {
+      const u = frac(ph + (s === 'L' ? 0 : 0.5)), f = gaitFoot(u, WALK.d, WALK.zf, WALK.zb, 0.10, 0.85);
+      p['fz' + s] = f.z; p['fc' + s] = f.c;
+      p['fp' + s] = crP(u, [[0, -0.26], [0.1, 0], [0.42, 0], [0.6, 0.5], [0.72, 0.4], [0.9, -0.28]]);
+    }
+    p.py = -0.066 + 0.014 * Math.cos(4 * PI * (ph - 0.3)); p.px = 0.022 * Math.sin(2 * PI * (ph - 0.05));
+    p.pry = -0.09 * c; p.prz = 0.03 * Math.sin(2 * PI * (ph - 0.05)); p.prx = 0.035;
+    p.wy = 0.2 * c; p.wz = -p.prz * 0.8; p.wx = 0.02; p.ny = -(p.pry + p.wy) * 0.8; p.nx = -0.04;
+    p.sxL = 0.42 * c - 0.04; p.sxR = -0.42 * c - 0.04; p.elL = 0.42 - 0.2 * c; p.elR = 0.42 + 0.2 * c;
+    p.szL = p.szR = 0.1; p.gripL = p.gripR = 0.4;
+    return p;
+  }
+  const RUN = { T: 0.64, d: 0.36, zf: 0.23, zb: -0.39 };
+  function run(t) {
+    const ph = t / RUN.T, c = Math.cos(2 * PI * ph), p = base();
+    for (const [s] of SIDES) {
+      const u = frac(ph + (s === 'L' ? 0 : 0.5)), f = gaitFoot(u, RUN.d, RUN.zf, RUN.zb, 0.27, 0.7);
+      p['fz' + s] = f.z; p['fc' + s] = f.c;
+      p['fp' + s] = crP(u, [[0, -0.1], [0.12, 0.04], [0.36, 0.62], [0.5, 1.0], [0.7, 0.5], [0.9, -0.16]]);
+    }
+    p.py = -0.05 - 0.03 * Math.cos(4 * PI * (ph - 0.18)); p.px = 0.012 * Math.sin(2 * PI * (ph - 0.05));
+    p.pry = -0.14 * c; p.prz = 0.03 * Math.sin(2 * PI * (ph - 0.05)); p.prx = 0.17;
+    p.wx = 0.12; p.wy = 0.34 * c; p.wz = -p.prz; p.nx = -0.14; p.ny = -(p.pry + p.wy) * 0.9;
+    p.sxL = 0.12 + 0.75 * c; p.sxR = 0.12 - 0.75 * c; p.elL = 1.5 - 0.22 * c; p.elR = 1.5 + 0.22 * c;
+    p.szL = p.szR = 0.16; p.syL = p.syR = -0.2; p.gripL = p.gripR = 0.85;
+    return p;
+  }
+
+  // dance: 16 beats at 120 BPM, four 4-beat phrases
+  const BEAT = 0.5, DANCE_T = 16 * BEAT;
+  function dA(b) { // groove
+    const pl = (Math.cos(2 * PI * b) + 1) / 2, s = Math.sin(PI * b);
+    return base({ py: -0.04 - 0.05 * pl, px: 0.05 * s, prz: -0.05 * s, pry: 0.18 * s, wy: -0.3 * s, wz: 0.05 * s, nx: 0.1 * pl, ny: 0.1 * s,
+      fx: 0.05, sxL: -0.4 - 0.35 * s, sxR: -0.4 + 0.35 * s, el: 1.35 + 0.2 * Math.cos(2 * PI * b), sz: 0.28, grip: 0.8 });
+  }
+  function dB(b) { // arm wave travelling left hand -> right hand
+    const w = PI * (b - 4), S = o => Math.sin(w - o);
+    return base({ py: -0.045 - 0.02 * Math.cos(2 * PI * b), px: 0.035 * S(2.2), wz: 0.08 * S(2.2), prz: -0.03 * S(2.2), ny: 0.3 * S(1.0), fx: 0.05,
+      sy: PI / 2, grip: 0.05,
+      hxL: -0.6 * S(0), elL: 0.42 + 0.4 * S(0.8), szL: 1.45 + 0.28 * S(1.6),
+      szR: 1.45 + 0.28 * S(2.8), elR: 0.42 + 0.4 * S(3.6), hxR: -0.6 * S(4.4) });
+  }
+  const C_UP = base({ szR: 2.45, sxR: -0.15, elR: 0.05, szL: 0.5, elL: 1.75, sxL: 0.3, syL: -0.7, px: 0.06, prz: -0.06, wz: 0.1, ny: -0.5, nx: -0.22, pry: -0.2, wy: -0.18, fx: 0.06, gripR: 0.15, gripL: 0.6 });
+  const C_DN = base({ szR: -0.4, sxR: -0.8, elR: 0.2, szL: 0.5, elL: 1.75, sxL: 0.3, syL: -0.7, px: -0.04, prz: 0.04, wz: -0.06, ny: 0.4, nx: 0.25, pry: 0.25, wy: 0.25, fx: 0.06, gripR: 0.15, gripL: 0.6 });
+  const C_SEQ = [C_UP, C_DN, mirrorP(C_UP), mirrorP(C_DN)];
+  function dC(b) { // point up / point across
+    const x = b - 8, k = ((Math.floor(x) % 4) + 4) % 4, f = frac(x);
+    const p = lerpP(C_SEQ[(k + 3) % 4], C_SEQ[k], sm(f / 0.45));
+    p.py = -0.04 - 0.045 * (Math.cos(2 * PI * b) + 1) / 2; return p;
+  }
+  const R_1 = base({ sxL: -1.57, elL: 1.57, sxR: 0, elR: 1.57, sz: 0.1, ny: 0.6, wy: 0.28, py: -0.035, grip: 0, fx: 0.03 });
+  const R_2 = mirrorP(R_1);
+  const R_K = base({ py: -0.23, pz: -0.06, prx: 0.34, wx: 0.22, nx: -0.3, sx: 0.65, el: 0.8, sz: 0.2, grip: 0.7, fx: 0.04 });
+  const R_T = base({ sx: -0.5, el: 2.1, sz: 0.22, grip: 0.9, prx: 0.05, fx: 0.02, toe: 0 });
+  function dD(b) { // robot poses, crouch, jump spin
+    const x = Math.min(b - 12, 3.9999), f = frac(x);
+    if (x < 0) return R_2;
+    if (x < 1) return lerpP(R_2, R_1, backOut(f / 0.3));
+    if (x < 2) return lerpP(R_1, R_2, backOut(f / 0.3));
+    if (x < 3) return lerpP(R_2, R_K, sm(f / 0.7));
+    const p = lerpP(R_K, R_T, sm(f / 0.35));
+    p.py = lin(f, [[0, -0.23], [0.16, -0.04], [0.5, 0.11], [0.84, -0.02], [1, -0.09]]);
+    p.pz = lin(f, [[0, -0.06], [0.2, 0]]); p.prx = lin(f, [[0, 0.34], [0.2, 0.05]]);
+    const air = lin(f, [[0.14, 0], [0.5, 0.17], [0.86, 0]]);
+    p.fcL = p.fcR = air; p.fpL = p.fpR = lin(f, [[0, 0], [0.14, 0.5], [0.5, 0.55], [0.86, 0.12], [1, 0]]);
+    return p;
+  }
+  function dance(t) {
+    const b = ((t / BEAT) % 16 + 16) % 16, r = 0.36;
+    const fn = [dA, dB, dC, dD];
+    const seg = Math.floor(b / 4); const ws = [0, 0, 0, 0];
+    const nxt = (seg + 1) % 4, prv = (seg + 3) % 4, loc = b - seg * 4;
+    if (loc < r / 2) { const k = sm((loc + r / 2) / r); ws[seg] = k; ws[prv] = 1 - k; }
+    else if (loc > 4 - r / 2) { const k = sm((loc - 4 + r / 2) / r); ws[nxt] = k; ws[seg] = 1 - k; }
+    else ws[seg] = 1;
+    let p = null;
+    for (let i = 0; i < 4; i++) if (ws[i] > 0) {
+      let bb = b; if (i === 0 && b > 8) bb = b - 16; if (i === 3 && b < 8) bb = b + 16;
+      const q = fn[i](bb); if (!p) { p = q; p._w = ws[i]; } else { const tw = p._w + ws[i]; const n = lerpP(p, q, ws[i] / tw); n._w = tw; p = n; }
+    }
+    p.rootYaw = b < 15.12 ? 0 : 2 * PI * sm((b - 15.12) / 0.76);
+    return p;
+  }
+
+  const MOTIONS = {
+    idle: { name: 'Idle', ja: '待機', T: 6, fn: idle, speed: 0 },
+    walk: { name: 'Walk', ja: '歩行', T: WALK.T, fn: walk, speed: (WALK.zf - WALK.zb) / (WALK.d * WALK.T) },
+    run: { name: 'Run', ja: '走行', T: RUN.T, fn: run, speed: (RUN.zf - RUN.zb) / (RUN.d * RUN.T) },
+    dance: { name: 'Dance', ja: 'ダンス', T: DANCE_T, fn: dance, speed: 0 },
+  };
+
+  // ---------------------------------------------------------------- components
+  const COMPS = [
+    { id: 'brain', cat: '知能・計算', name: 'メインAIコンピュータ「CORTEX」', loc: '胸部前面', spec: ['デュアル冗長SoC（片系故障でも動作継続）', '推論性能 約4,000 TOPS／メモリ256 GB', '視覚・言語・行動(VLA)モデルを機体内で実行', '液冷コールドプレート直結'] },
+    { id: 'cerebellum', cat: '知能・計算', name: '運動制御ユニット「小脳」', loc: '骨盤内', spec: ['全身バランス制御 1 kHz', '関節トルク制御ループ 20 kHz', 'EtherCATで全アクチュエータと同期', 'メインAIが停止しても姿勢を保持'] },
+    { id: 'safety', cat: '知能・計算', name: '独立セーフティコントローラ', loc: '胸部上部', spec: ['AIとは別系統の二重化マイコン', '力・速度の上限監視と緊急停止', '人の接近を検知すると自動減速'] },
+    { id: 'cams', cat: 'センサー', name: 'ビジョンカメラ ×8', loc: '頭部4・胸部2・手首2', spec: ['頭部ステレオ＋広角で視野 約300°', 'グローバルシャッター 120 fps', '手首カメラで手元の細かい作業を確認'] },
+    { id: 'lidar', cat: 'センサー', name: '360° LiDAR', loc: '頭頂クレスト内', spec: ['ソリッドステート式、測距 約40 m', '暗所や逆光でも周囲を3D計測'] },
+    { id: 'imu', cat: 'センサー', name: '慣性センサー（IMU）×2', loc: '頭部・骨盤', spec: ['加速度＋ジャイロ 2 kHz', '2点で計測し転倒を予測'] },
+    { id: 'audio', cat: 'センサー', name: 'マイクアレイ＋スピーカー', loc: '頭部', spec: ['6chマイクで話者の方向を特定', '騒音下でも音声対話が可能'] },
+    { id: 'ft', cat: 'センサー', name: '6軸力覚センサー ×4', loc: '両足首・両手首', spec: ['接地反力と手先の力を計測', '押されても踏ん張る制御に使用'] },
+    { id: 'tactile', cat: 'センサー', name: '指先触覚センサー ×10', loc: '全指先', spec: ['圧力分布と滑りを検出', '卵や布など壊れやすい物を把持'] },
+    { id: 'rot', cat: '駆動', name: '回転アクチュエータ ×20', loc: '首・肩・肘・腰・股・膝・足', spec: ['フレームレスモータ＋波動歯車', 'デュアルエンコーダ＋トルクセンサ内蔵', '最大トルク 約250 N·m（股・膝）'] },
+    { id: 'lin', cat: '駆動', name: 'リニアアクチュエータ ×14', loc: '大腿・下腿・前腕', spec: ['遊星ローラーねじ式', '最大推力 約8,000 N', '走行やジャンプの衝撃を受け止める'] },
+    { id: 'hand', cat: '駆動', name: '22自由度ハンド', loc: '手・前腕', spec: ['片手22自由度、腱（ワイヤ）駆動', 'モーターは前腕内に配置し手を軽量化', '指先保持力 約10 kg'] },
+    { id: 'battery', cat: '電源・冷却', name: '全固体バッテリー', loc: '胴体中央', spec: ['容量 3.5 kWh／52 V', '連続稼働 約8時間', '自分で充電ドックに戻る'] },
+    { id: 'pdu', cat: '電源・冷却', name: '電源分配ユニット（BMS）', loc: '腹部', spec: ['セル監視と過電流保護', '回生電力をバッテリーに戻す'] },
+    { id: 'cooling', cat: '電源・冷却', name: '液冷システム', loc: '背面', spec: ['ポンプ＋背面ラジエータ', 'AIコンピュータと高負荷関節を冷却'] },
+    { id: 'comm', cat: '通信', name: '通信モジュール', loc: '胸部上部', spec: ['5G／Wi-Fi 7／UWB／Bluetooth', '通信が切れても単独で動作'] },
+    { id: 'skeleton', cat: '構造', name: '骨格フレーム', loc: '全身', spec: ['チタン合金＋CFRP', '機体質量 62 kg'] },
+    { id: 'armor', cat: '構造', name: '外装シェル', loc: '全身', spec: ['ポリカーボネート＋CFRP', '関節部は挟み込み防止の柔軟カバー'] },
+    { id: 'visor', cat: '構造', name: 'ステータスバイザー', loc: '顔・胸', spec: ['LEDで状態や視線の向きを表示', '人に動作意図を伝える'] },
+  ];
+
+  g.RAIJIN = { JOINTS, JI, MATS, PARTS, COMPS, MOTIONS, KEYS, partGeom, base, lerpP, solve, world, qmul, qrot, qconj, PELVIS_Y };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+(function(){
+'use strict';
+const R=window.RAIJIN, $=s=>document.querySelector(s);
+const cv=$('#gl'), gl=cv.getContext('webgl2',{antialias:true,stencil:true,alpha:false,preserveDrawingBuffer:false});
+if(!gl){$('#err').style.display='flex';return;}
+
+// ---------- shaders
+function prog(vs,fs){const p=gl.createProgram();for(const [t,s] of [[gl.VERTEX_SHADER,vs],[gl.FRAGMENT_SHADER,fs]]){const sh=gl.createShader(t);gl.shaderSource(sh,'#version 300 es\nprecision highp float;\n'+s);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(sh));gl.attachShader(p,sh);}
+  gl.bindAttribLocation(p,0,'aPos');gl.bindAttribLocation(p,1,'aNrm');gl.bindAttribLocation(p,2,'aCol');gl.bindAttribLocation(p,3,'aMat');gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));
+  const u={},n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);for(let i=0;i<n;i++){const a=gl.getActiveUniform(p,i);u[a.name]=gl.getUniformLocation(p,a.name);}return {p,u};}
+const QROT='vec3 qrot(vec4 q,vec3 v){return v+2.0*cross(q.xyz,cross(q.xyz,v)+q.w*v);}\n';
+const VS=QROT+`in vec3 aPos;in vec3 aNrm;in vec3 aCol;in vec3 aMat;uniform mat4 uVP;uniform vec4 uQ;uniform vec3 uT;uniform float uFlip;
+out vec3 vW;out vec3 vN;out vec3 vC;out vec3 vM;
+void main(){vW=qrot(uQ,aPos)+uT;vN=qrot(uQ,aNrm);vC=aCol;vM=aMat;vec3 pw=vW;pw.y*=uFlip;gl_Position=uVP*vec4(pw,1.0);}`;
+const FS=`in vec3 vW;in vec3 vN;in vec3 vC;in vec3 vM;uniform vec3 uCam;uniform vec3 uL;uniform float uHi;uniform float uDim;uniform float uGhost;uniform float uFlip;out vec4 o;
+vec3 env(vec3 r){float t=smoothstep(-0.25,0.7,r.y);vec3 c=mix(vec3(0.05,0.06,0.08),vec3(0.55,0.66,0.85),t);c+=vec3(1.0,0.95,0.85)*pow(max(dot(r,uL),0.0),24.0)*1.6;c+=vec3(1.0,0.45,0.15)*pow(max(dot(r,normalize(vec3(-0.7,0.2,-0.6))),0.0),6.0)*0.35;return c;}
+void main(){vec3 N=normalize(vN);vec3 V=normalize(uCam-vW);if(gl_FrontFacing!=(uFlip>0.0))N=-N;float nv=max(dot(N,V),0.0);
+ if(uGhost>0.5){float f=pow(1.0-nv,2.4);o=vec4(vec3(0.35,0.75,1.0)*(f*0.55+0.02),1.0);return;}
+ float metal=vM.x,rough=vM.y;vec3 alb=vC;
+ float nl=max(dot(N,uL),0.0);vec3 hemi=mix(vec3(0.10,0.11,0.14),vec3(0.42,0.48,0.60),N.y*0.5+0.5);
+ float fill=max(dot(N,normalize(vec3(-0.7,0.2,-0.6))),0.0);
+ vec3 dif=alb*(1.0-metal)*(hemi+nl*vec3(1.0,0.96,0.9)*0.95+fill*vec3(1.0,0.5,0.2)*0.25);
+ vec3 F0=mix(vec3(0.04),alb,metal);vec3 F=F0+(1.0-F0)*pow(1.0-nv,5.0);
+ vec3 Rr=reflect(-V,N);vec3 H=normalize(V+uL);float sp=pow(max(dot(N,H),0.0),mix(220.0,8.0,rough))*mix(2.2,0.15,rough)*nl;
+ vec3 col=dif+F*(env(Rr)*(1.0-rough*0.75)+sp)+alb*vM.z;
+ col+=vec3(0.45,0.7,1.0)*pow(1.0-nv,3.0)*(dot(N,normalize(vec3(-0.3,0.35,-0.9)))*0.5+0.5)*0.9;
+ col*=uDim;col=mix(col,vec3(1.0,0.36,0.04)*(0.5+0.5*nl+0.8*pow(1.0-nv,2.0)),uHi);
+ col*=0.88;col=clamp((col*(2.51*col+0.03))/(col*(2.43*col+0.59)+0.14),0.0,1.0);if(uFlip<0.0)col*=0.55*clamp(1.0-vW.y/1.5,0.0,1.0);o=vec4(pow(col,vec3(1.0/2.2)),1.0);}`;
+const VSS=QROT+`in vec3 aPos;uniform mat4 uVP;uniform vec4 uQ;uniform vec3 uT;uniform vec3 uL;
+void main(){vec3 w=qrot(uQ,aPos)+uT;w.xz-=uL.xz*(w.y/uL.y);w.y=0.002;gl_Position=uVP*vec4(w,1.0);}`;
+const FSS=`out vec4 o;void main(){o=vec4(0.0,0.0,0.0,0.42);}`;
+const VSF=`in vec3 aPos;uniform mat4 uVP;out vec3 vW;void main(){vW=aPos;gl_Position=uVP*vec4(aPos,1.0);}`;
+const FSF=`in vec3 vW;uniform float uScroll;uniform vec3 uBg;uniform vec2 uCen;out vec4 o;
+float grid(vec2 p,float s){vec2 g=abs(fract(p/s-0.5)-0.5)/fwidth(p/s);return 1.0-min(min(g.x,g.y),1.0);}
+void main(){vec2 p=vW.xz;p.y+=uScroll;float d=length(vW.xz);
+ vec3 c=vec3(0.05,0.07,0.105);c+=vec3(0.16,0.22,0.32)*grid(p,0.5)*0.55;c+=vec3(0.2,0.28,0.4)*grid(p,2.5)*0.5;
+ float ring=smoothstep(0.02,0.0,abs(d-0.75));c+=vec3(1.0,0.42,0.1)*ring*0.5;
+ vec2 q=vW.xz-uCen;c*=1.0-0.5*exp(-dot(q,q)/0.07);c=mix(c,uBg,smoothstep(1.2,6.5,d));o=vec4(pow(c,vec3(1.0/2.2)),mix(0.7,1.0,smoothstep(0.8,3.5,d)));}`;
+const VSB=`in vec3 aPos;out vec2 vU;void main(){vU=aPos.xy;gl_Position=vec4(aPos.xy,0.999,1.0);}`;
+const FSB=`in vec2 vU;uniform vec3 uBg;out vec4 o;void main(){vec3 c=uBg*(1.0-0.35*smoothstep(0.1,1.2,length(vU*vec2(0.7,0.9))));o=vec4(pow(max(c,0.0),vec3(1.0/2.2)),1.0);}`;
+const pM=prog(VS,FS),pS=prog(VSS,FSS),pF=prog(VSF,FSF),pB=prog(VSB,FSB);
+const BG=[0.022,0.034,0.058];
+
+// ---------- meshes: one per joint × layer × component
+const groups=new Map();
+for(const p of R.PARTS){const k=p.joint+'|'+p.layer+'|'+p.comp;if(!groups.has(k))groups.set(k,{joint:p.joint,layer:p.layer,comp:p.comp,parts:[]});groups.get(k).parts.push(p);}
+const meshes=[];
+for(const g of groups.values()){
+  const pos=[],nrm=[],col=[],mat=[],idx=[];const cen=[0,0,0];
+  for(const p of g.parts){const ge=R.partGeom(p),b=pos.length/3,m=R.MATS[p.mat];
+    for(let i=0;i<ge.pos.length;i+=3){pos.push(ge.pos[i],ge.pos[i+1],ge.pos[i+2]);nrm.push(ge.nrm[i],ge.nrm[i+1],ge.nrm[i+2]);col.push(m.c[0],m.c[1],m.c[2]);mat.push(m.m,m.r,m.e);}
+    for(const v of ge.idx)idx.push(v+b);cen[0]+=p.pos[0];cen[1]+=p.pos[1];cen[2]+=p.pos[2];}
+  const vao=gl.createVertexArray();gl.bindVertexArray(vao);
+  [pos,nrm,col,mat].forEach((a,i)=>{const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(a),gl.STATIC_DRAW);gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,0,0);});
+  const ib=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(idx),gl.STATIC_DRAW);
+  meshes.push({vao,n:idx.length,joint:g.joint,layer:g.layer,comp:g.comp,cen:cen.map(x=>x/g.parts.length)});
+}
+function quadVAO(v){const vao=gl.createVertexArray();gl.bindVertexArray(vao);const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(v),gl.STATIC_DRAW);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);return vao;}
+const floorVAO=quadVAO([-9,0,-9, -9,0,9, 9,0,-9, 9,0,-9, -9,0,9, 9,0,9]);
+const bgVAO=quadVAO([-1,-1,0, 1,-1,0, -1,1,0, -1,1,0, 1,-1,0, 1,1,0]);
+gl.bindVertexArray(null);
+$('#mdl').textContent=R.JOINTS.length+'関節・'+R.PARTS.length+'パーツ・約'+(meshes.reduce((a,m)=>a+m.n,0)/30000).toFixed(1)+'万ポリゴン';
+
+// ---------- camera
+const HOME={yaw:0.55,pitch:0.1,dist:1,tx:0,ty:0.93,tz:0};
+const cam=Object.assign({},HOME),goal=Object.assign({},HOME);
+function persp(fy,as,n,f){const t=1/Math.tan(fy/2);return [t/as,0,0,0, 0,t,0,0, 0,0,(f+n)/(n-f),-1, 0,0,2*f*n/(n-f),0];}
+function look(e,c){let z=[e[0]-c[0],e[1]-c[1],e[2]-c[2]];let l=Math.hypot(...z);z=z.map(v=>v/l);let x=[z[2],0,-z[0]];l=Math.hypot(...x);x=x.map(v=>v/l);const y=[z[1]*x[2]-z[2]*x[1],z[2]*x[0]-z[0]*x[2],z[0]*x[1]-z[1]*x[0]];
+  return [x[0],y[0],z[0],0, x[1],y[1],z[1],0, x[2],y[2],z[2],0, -(x[0]*e[0]+x[1]*e[1]+x[2]*e[2]),-(y[0]*e[0]+y[1]*e[1]+y[2]*e[2]),-(z[0]*e[0]+z[1]*e[1]+z[2]*e[2]),1];}
+function mul(a,b){const o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o;}
+const FOV=0.56;
+function fitDist(){const as=cv.clientWidth/Math.max(1,cv.clientHeight);const v=1.08/Math.tan(FOV/2),h=0.62/(Math.tan(FOV/2)*as);return Math.max(v,h);}
+
+// ---------- state
+const S={mode:'shell',motion:'run',prev:'run',blend:1,t:0,speed:1,paused:false,sel:null,scroll:0,vel:0,spin:false};
+if(matchMedia('(prefers-reduced-motion: reduce)').matches){S.motion=S.prev='idle';S.paused=true;}
+let W=R.world(R.solve(R.MOTIONS[S.motion].fn(0)));
+
+function resize(){const dpr=Math.min(window.devicePixelRatio||1,2),w=Math.round(cv.clientWidth*dpr),h=Math.round(cv.clientHeight*dpr);if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}}
+function drawMeshes(P,filter){for(const m of meshes){if(!filter(m))continue;const j=W[m.joint];gl.uniform4fv(P.u.uQ,j.q);gl.uniform3fv(P.u.uT,j.p);
+  if(P===pM){const hi=S.sel&&m.comp===S.sel;gl.uniform1f(P.u.uHi,hi?0.55+0.25*Math.sin(performance.now()/160):0);gl.uniform1f(P.u.uDim,S.sel&&!hi?0.38:1);}
+  gl.bindVertexArray(m.vao);gl.drawElements(gl.TRIANGLES,m.n,gl.UNSIGNED_INT,0);}}
+const Ld=(()=>{const v=[0.45,0.8,0.5],l=Math.hypot(...v);return v.map(x=>x/l);})();
+function render(){
+  resize();gl.viewport(0,0,cv.width,cv.height);
+  const d=cam.dist*fitDist(),cp=Math.cos(cam.pitch);
+  const eye=[cam.tx+d*cp*Math.sin(cam.yaw),cam.ty+d*Math.sin(cam.pitch),cam.tz+d*cp*Math.cos(cam.yaw)];
+  const VP=mul(persp(FOV,cv.width/cv.height,0.05,60),look(eye,[cam.tx,cam.ty,cam.tz]));
+  gl.clearColor(BG[0],BG[1],BG[2],1);gl.clearStencil(0);gl.depthMask(true);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT|gl.STENCIL_BUFFER_BIT);
+  gl.disable(gl.BLEND);gl.disable(gl.CULL_FACE);gl.disable(gl.DEPTH_TEST);
+  gl.useProgram(pB.p);gl.uniform3fv(pB.u.uBg,BG);gl.bindVertexArray(bgVAO);gl.drawArrays(gl.TRIANGLES,0,6);
+  gl.enable(gl.DEPTH_TEST);
+  const solid=m=>S.mode==='shell'?m.layer!=='core':m.layer!=='shell';
+  gl.useProgram(pM.p);gl.uniformMatrix4fv(pM.u.uVP,false,VP);gl.uniform3fv(pM.u.uCam,eye);gl.uniform3fv(pM.u.uL,Ld);gl.uniform1f(pM.u.uGhost,0);gl.uniform1f(pM.u.uFlip,-1);
+  gl.enable(gl.CULL_FACE);gl.cullFace(gl.FRONT);drawMeshes(pM,solid);gl.cullFace(gl.BACK);gl.disable(gl.CULL_FACE);
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+  gl.useProgram(pF.p);gl.uniformMatrix4fv(pF.u.uVP,false,VP);gl.uniform1f(pF.u.uScroll,S.scroll);gl.uniform3fv(pF.u.uBg,BG);gl.uniform2f(pF.u.uCen,W[1].p[0],W[1].p[2]);gl.bindVertexArray(floorVAO);gl.drawArrays(gl.TRIANGLES,0,6);
+  // shadow
+  gl.useProgram(pS.p);gl.uniformMatrix4fv(pS.u.uVP,false,VP);gl.uniform3fv(pS.u.uL,Ld);
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.enable(gl.STENCIL_TEST);gl.stencilFunc(gl.EQUAL,0,255);gl.stencilOp(gl.KEEP,gl.KEEP,gl.INCR);gl.depthMask(false);
+  drawMeshes(pS,m=>S.mode==='shell'?m.layer==='shell':m.layer==='frame');
+  gl.disable(gl.STENCIL_TEST);gl.disable(gl.BLEND);gl.depthMask(true);
+  // solid
+  gl.useProgram(pM.p);gl.uniformMatrix4fv(pM.u.uVP,false,VP);gl.uniform3fv(pM.u.uCam,eye);gl.uniform3fv(pM.u.uL,Ld);gl.uniform1f(pM.u.uGhost,0);gl.uniform1f(pM.u.uFlip,1);
+  gl.enable(gl.CULL_FACE);drawMeshes(pM,solid);
+  if(S.mode==='xray'){gl.disable(gl.CULL_FACE);gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);gl.depthMask(false);gl.uniform1f(pM.u.uGhost,1);const s=S.sel;S.sel=null;drawMeshes(pM,m=>m.layer==='shell');S.sel=s;gl.depthMask(true);gl.disable(gl.BLEND);}
+}
+
+// ---------- loop
+let last=performance.now();
+function selCenter(){let c=[0,0,0],n=0;for(const m of meshes)if(m.comp===S.sel&&m.layer!=='shell'){const j=W[m.joint],r=R.qrot(j.q,m.cen);c[0]+=j.p[0]+r[0];c[1]+=j.p[1]+r[1];c[2]+=j.p[2]+r[2];n++;}return n?c.map(x=>x/n):null;}
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(!S.paused){S.t+=dt*S.speed;S.blend=Math.min(1,S.blend+dt*S.speed/0.4);}
+  const A=R.MOTIONS[S.prev],B=R.MOTIONS[S.motion];let p=B.fn(S.t);
+  const k=S.blend*S.blend*(3-2*S.blend);if(k<1){const a=A.fn(S.t),yaw=p.rootYaw;p=R.lerpP(a,p,k);p.rootYaw=yaw;}
+  W=R.world(R.solve(p));
+  const v=A.speed+(B.speed-A.speed)*k;if(!S.paused)S.scroll+=v*dt*S.speed;S.vel=v*S.speed*(S.paused?0:1);
+  $('#rSpeed').textContent=(S.vel*3.6).toFixed(1);
+  if(S.spin&&!drag)goal.yaw+=dt*0.35;
+  const ease=1-Math.exp(-dt*7);for(const key in cam)cam[key]+=(goal[key]-cam[key])*ease;
+  try{render();}catch(e){console.error(e);}
+  requestAnimationFrame(frame);
+}
+
+// ---------- input
+let drag=null;const pts=new Map();
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);pts.set(e.pointerId,[e.clientX,e.clientY]);drag={pinch:0};cv.style.cursor='grabbing';});
+cv.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;const o=pts.get(e.pointerId);const dx=e.clientX-o[0],dy=e.clientY-o[1];pts.set(e.pointerId,[e.clientX,e.clientY]);
+  if(pts.size===1){goal.yaw-=dx*0.008;goal.pitch=Math.max(0.03,Math.min(1.3,goal.pitch+dy*0.006));}
+  else if(pts.size===2){const a=[...pts.values()],d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);if(drag.pinch)goal.dist=Math.max(0.25,Math.min(2.2,goal.dist*drag.pinch/d));drag.pinch=d;}});
+const up=e=>{pts.delete(e.pointerId);if(drag)drag.pinch=0;if(!pts.size){drag=null;cv.style.cursor='grab';}};
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+cv.addEventListener('wheel',e=>{e.preventDefault();goal.dist=Math.max(0.25,Math.min(2.2,goal.dist*Math.exp(e.deltaY*0.0012)));},{passive:false});
+
+// ---------- UI
+function setMode(m){S.mode=m;document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));}
+document.querySelectorAll('#modes button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+function setMotion(k){if(k===S.motion)return;S.prev=S.motion;S.motion=k;S.blend=0;if(S.paused)S.blend=1;$('#rMotion').textContent=R.MOTIONS[k].ja;document.querySelectorAll('#motions button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k));}
+for(const k of ['idle','walk','run','dance']){const b=document.createElement('button');b.dataset.k=k;b.setAttribute('aria-pressed',k===S.motion);b.innerHTML=R.MOTIONS[k].ja+'<small>'+R.MOTIONS[k].name.toUpperCase()+'</small>';b.onclick=()=>setMotion(k);$('#motions').appendChild(b);}
+$('#rMotion').textContent=R.MOTIONS[S.motion].ja;
+$('#spd').oninput=e=>{S.speed=+e.target.value;$('#spdOut').textContent=S.speed.toFixed(2)+'×';};
+const tog=(id,fn)=>{$(id).onclick=()=>{const v=$(id).getAttribute('aria-pressed')!=='true';$(id).setAttribute('aria-pressed',v);fn(v);};};
+tog('#pause',v=>{S.paused=v;});tog('#spin',v=>{S.spin=v;});
+if(S.paused)$('#pause').setAttribute('aria-pressed','true');
+function select(id){S.sel=S.sel===id?null:id;document.querySelectorAll('.comp').forEach(b=>b.setAttribute('aria-pressed',b.dataset.id===S.sel));
+  if(S.sel){if(S.mode==='shell'&&S.sel!=='armor')setMode('xray');if(S.sel==='armor')setMode('shell');const c=selCenter();if(c&&S.sel!=='skeleton'&&S.sel!=='rot'&&S.sel!=='lin'){goal.tx=c[0];goal.ty=c[1];goal.tz=c[2];goal.dist=0.5;}else{Object.assign(goal,{tx:0,ty:HOME.ty,tz:0,dist:1});}}
+  else Object.assign(goal,{tx:0,ty:HOME.ty,tz:0,dist:1});}
+$('#reset').onclick=()=>{const y=goal.yaw;Object.assign(goal,HOME);goal.yaw=HOME.yaw+Math.round((y-HOME.yaw)/(2*Math.PI))*2*Math.PI;if(S.sel)select(S.sel);};
+{const host=$('#p-parts');const n=document.createElement('p');n.className='note';n.textContent='部品をタップすると、3D上で光らせて位置を示します。';host.appendChild(n);let cat='',box=null;
+ for(const c of R.COMPS){if(c.cat!==cat){cat=c.cat;const h=document.createElement('h2');h.textContent=cat;box=document.createElement('div');box.className='cat';host.appendChild(h);host.appendChild(box);}
+  const b=document.createElement('button');b.className='comp';b.dataset.id=c.id;b.setAttribute('aria-pressed','false');
+  b.innerHTML='<span class="top"><span class="nm"></span><span class="loc"></span></span><ul>'+c.spec.map(()=>'<li></li>').join('')+'</ul>';
+  b.querySelector('.nm').textContent=c.name;b.querySelector('.loc').textContent=c.loc;b.querySelectorAll('li').forEach((li,i)=>li.textContent=c.spec[i]);b.onclick=()=>select(c.id);box.appendChild(b);}}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.tab));});
+window.__robot={S,setMode,setMotion,select,cam,goal,render,frameAt:(t)=>{S.t=t;S.blend=1;}};
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
